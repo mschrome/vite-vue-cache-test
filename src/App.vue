@@ -1,7 +1,5 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
-// 导入大视频文件，确保它被包含在构建产物中
-import largeVideo from './assets/lisa_dancing_001.mp4'
 </script>
 
 <template>
@@ -13,23 +11,7 @@ import largeVideo from './assets/lisa_dancing_001.mp4'
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
-  <HelloWorld msg="Vite + Vue" />
-  
-  <!-- 添加大视频文件，触发Cloudflare Pages文件大小限制 -->
-  <div class="video-container">
-    <h2>Large Video Test (32MB)</h2>
-    <p>This video is used to test Cloudflare Pages file size limit.</p>
-    <video 
-      :src="largeVideo" 
-      controls 
-      width="600" 
-      height="400"
-      preload="metadata"
-    >
-      Your browser does not support the video tag.
-    </video>
-    <p><small>Video URL: {{ largeVideo }}</small></p>
-  </div>
+  <HelloWorld msg="Vite + Vue + Next" />
 </template>
 
 <style scoped>
