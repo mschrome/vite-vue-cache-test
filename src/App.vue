@@ -3,33 +3,31 @@ import HelloWorld from './components/HelloWorld.vue'
 import { ref } from 'vue'
 
 // 文件上传相关的响应式数据
-const selectedFile = ref(null)
+const inputFileRef = ref(null)
 const uploading = ref(false)
 const uploadResult = ref(null)
 const uploadError = ref(null)
 
-// 文件选择处理函数
-const handleFileSelect = (event) => {
-  selectedFile.value = event.target.files[0]
-  uploadResult.value = null
-  uploadError.value = null
-}
-
 // 文件上传处理函数
-const uploadFile = async () => {
-  if (!selectedFile.value) {
+const handleSubmit = async (event) => {
+  event.preventDefault()
+  
+  if (!inputFileRef.value?.files || inputFileRef.value.files.length === 0) {
     uploadError.value = 'Please select a file first'
     return
   }
 
   uploading.value = true
   uploadError.value = null
+  uploadResult.value = null
 
   try {
-    const filename = selectedFile.value.name
+    const file = inputFileRef.value.files[0]
+    const filename = file.name
+    
     const response = await fetch(`/api/blob-upload?filename=${encodeURIComponent(filename)}`, {
       method: 'POST',
-      body: selectedFile.value,
+      body: file,
     })
 
     const result = await response.json()
@@ -48,12 +46,11 @@ const uploadFile = async () => {
 
 // 清除结果
 const clearResults = () => {
-  selectedFile.value = null
   uploadResult.value = null
   uploadError.value = null
-  // 清除文件输入
-  const fileInput = document.getElementById('fileInput')
-  if (fileInput) fileInput.value = ''
+  if (inputFileRef.value) {
+    inputFileRef.value.value = ''
+  }
 }
 </script>
 
@@ -73,49 +70,49 @@ const clearResults = () => {
     <h2>🗂️ Vercel Blob 存储测试</h2>
     <p>测试文件上传到 Vercel Blob 存储</p>
     
-    <div class="upload-section">
-      <div class="file-input-wrapper">
+    <form @submit="handleSubmit" class="upload-form">
+      <div class="form-section">
         <input 
-          id="fileInput"
+          ref="inputFileRef"
+          name="file" 
           type="file" 
-          @change="handleFileSelect"
+          accept="image/jpeg, image/png, image/webp, image/gif, .pdf, .txt, .mp4, .mp3"
+          required
           :disabled="uploading"
           class="file-input"
         />
-        <label for="fileInput" class="file-input-label">
-          📁 {{ selectedFile ? selectedFile.name : '选择文件' }}
-        </label>
+        
+        <button 
+          type="submit"
+          :disabled="uploading"
+          class="upload-btn"
+        >
+          {{ uploading ? '📤 上传中...' : '🚀 上传到 Blob' }}
+        </button>
       </div>
-      
-      <button 
-        @click="uploadFile"
-        :disabled="!selectedFile || uploading"
-        class="upload-btn"
-      >
-        {{ uploading ? '📤 上传中...' : '🚀 上传到 Blob' }}
-      </button>
-      
-      <button 
-        @click="clearResults"
-        class="clear-btn"
-        v-if="uploadResult || uploadError"
-      >
-        🗑️ 清除
-      </button>
-    </div>
+    </form>
+    
+    <button 
+      @click="clearResults"
+      class="clear-btn"
+      v-if="uploadResult || uploadError"
+    >
+      🗑️ 清除结果
+    </button>
 
     <!-- 上传结果 -->
     <div v-if="uploadResult" class="result success">
       <h3>✅ 上传成功!</h3>
       <div class="result-details">
-        <p><strong>文件名:</strong> {{ uploadResult.blob.pathname }}</p>
-        <p><strong>URL:</strong> 
+        <p><strong>Blob URL:</strong> 
           <a :href="uploadResult.blob.url" target="_blank" class="blob-link">
             {{ uploadResult.blob.url }}
           </a>
         </p>
+        <p><strong>文件名:</strong> {{ uploadResult.blob.pathname }}</p>
         <p><strong>大小:</strong> {{ (uploadResult.blob.size / 1024).toFixed(2) }} KB</p>
-        <p><strong>类型:</strong> {{ uploadResult.blob.contentType }}</p>
+        <p><strong>类型:</strong> {{ uploadResult.blob.contentType || 'unknown' }}</p>
+        <p><strong>下载地址:</strong> {{ uploadResult.blob.downloadUrl || uploadResult.blob.url }}</p>
       </div>
     </div>
 
@@ -123,6 +120,7 @@ const clearResults = () => {
     <div v-if="uploadError" class="result error">
       <h3>❌ 上传失败</h3>
       <p>{{ uploadError }}</p>
+      <p class="debug-info">请检查 Vercel 环境变量是否正确配置</p>
     </div>
   </div>
 </template>
@@ -189,46 +187,38 @@ const clearResults = () => {
   margin-bottom: 2rem;
 }
 
-.upload-section {
+.upload-form {
+  margin-bottom: 1rem;
+}
+
+.form-section {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   align-items: center;
-  margin-bottom: 2rem;
-}
-
-.file-input-wrapper {
-  position: relative;
+  margin-bottom: 1rem;
 }
 
 .file-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.file-input-label {
-  display: inline-block;
-  padding: 0.75rem 1.5rem;
-  background-color: #ffffff;
+  padding: 0.75rem;
   border: 2px dashed #cbd5e1;
   border-radius: 8px;
+  background-color: #ffffff;
   cursor: pointer;
   transition: all 0.2s;
   color: #475569;
   font-weight: 500;
-  min-width: 200px;
+  min-width: 250px;
 }
 
-.file-input-label:hover {
+.file-input:hover {
   background-color: #f8fafc;
   border-color: #94a3b8;
+}
+
+.file-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .upload-btn, .clear-btn {
@@ -260,6 +250,7 @@ const clearResults = () => {
 .clear-btn {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
+  margin-top: 1rem;
 }
 
 .clear-btn:hover {
@@ -305,19 +296,29 @@ const clearResults = () => {
   color: #1d4ed8;
 }
 
+.debug-info {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  margin-top: 0.5rem;
+}
+
 @media (max-width: 640px) {
   .blob-test-container {
     margin: 1rem;
     padding: 1rem;
   }
   
-  .upload-section {
+  .form-section {
     gap: 0.75rem;
   }
   
   .upload-btn, .clear-btn {
     width: 100%;
     max-width: 200px;
+  }
+  
+  .file-input {
+    min-width: 200px;
   }
 }
 </style>
