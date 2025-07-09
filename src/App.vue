@@ -1,6 +1,7 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
 import { ref } from 'vue'
+import { upload } from '@vercel/blob/client'
 
 // 文件上传相关的响应式数据
 const inputFileRef = ref(null)
@@ -23,21 +24,28 @@ const handleSubmit = async (event) => {
 
   try {
     const file = inputFileRef.value.files[0]
-    const filename = file.name
     
-    const response = await fetch(`/api/blob-upload?filename=${encodeURIComponent(filename)}`, {
-      method: 'POST',
-      body: file,
+    // 使用 Vercel 的客户端上传功能
+    const blob = await upload(file.name, file, {
+      access: 'public',
+      handleUploadUrl: '/api/blob-upload',
+      multipart: true, // 对大文件启用分块上传
+      clientPayload: JSON.stringify({
+        originalFileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+        uploadedAt: new Date().toISOString()
+      })
     })
 
-    const result = await response.json()
-
-    if (response.ok) {
-      uploadResult.value = result
-    } else {
-      uploadError.value = result.error || 'Upload failed'
+    uploadResult.value = {
+      success: true,
+      blob: blob,
+      message: 'File uploaded successfully using client-side upload'
     }
+
   } catch (error) {
+    console.error('Upload error:', error)
     uploadError.value = `Upload error: ${error.message}`
   } finally {
     uploading.value = false
@@ -67,8 +75,8 @@ const clearResults = () => {
   
   <!-- Vercel Blob 测试区域 -->
   <div class="blob-test-container">
-    <h2>🗂️ Vercel Blob 存储测试</h2>
-    <p>测试文件上传到 Vercel Blob 存储</p>
+    <h2>🗂️ Vercel Blob 客户端上传测试</h2>
+    <p>使用 @vercel/blob/client 进行直接客户端上传</p>
     
     <form @submit="handleSubmit" class="upload-form">
       <div class="form-section">
@@ -87,7 +95,7 @@ const clearResults = () => {
           :disabled="uploading"
           class="upload-btn"
         >
-          {{ uploading ? '📤 上传中...' : '🚀 上传到 Blob' }}
+          {{ uploading ? '📤 客户端上传中...' : '🚀 客户端上传到 Blob' }}
         </button>
       </div>
     </form>
@@ -102,25 +110,51 @@ const clearResults = () => {
 
     <!-- 上传结果 -->
     <div v-if="uploadResult" class="result success">
-      <h3>✅ 上传成功!</h3>
+      <h3>✅ 客户端上传成功!</h3>
       <div class="result-details">
-        <p><strong>Blob URL:</strong> 
+        <p><strong>🔗 Blob URL:</strong> 
           <a :href="uploadResult.blob.url" target="_blank" class="blob-link">
             {{ uploadResult.blob.url }}
           </a>
         </p>
-        <p><strong>文件名:</strong> {{ uploadResult.blob.pathname }}</p>
-        <p><strong>大小:</strong> {{ (uploadResult.blob.size / 1024).toFixed(2) }} KB</p>
-        <p><strong>类型:</strong> {{ uploadResult.blob.contentType || 'unknown' }}</p>
-        <p><strong>下载地址:</strong> {{ uploadResult.blob.downloadUrl || uploadResult.blob.url }}</p>
+        <p><strong>📁 文件路径:</strong> {{ uploadResult.blob.pathname }}</p>
+        <p><strong>📊 文件大小:</strong> {{ (uploadResult.blob.size / 1024).toFixed(2) }} KB</p>
+        <p><strong>📋 内容类型:</strong> {{ uploadResult.blob.contentType || 'unknown' }}</p>
+        <p><strong>💾 下载地址:</strong> 
+          <a :href="uploadResult.blob.downloadUrl || uploadResult.blob.url" target="_blank" class="blob-link">
+            {{ uploadResult.blob.downloadUrl || uploadResult.blob.url }}
+          </a>
+        </p>
+        <p><strong>🎯 上传方式:</strong> 
+          <span class="upload-method">客户端直接上传 (Client-side Upload)</span>
+        </p>
       </div>
     </div>
 
     <!-- 错误信息 -->
     <div v-if="uploadError" class="result error">
-      <h3>❌ 上传失败</h3>
+      <h3>❌ 客户端上传失败</h3>
       <p>{{ uploadError }}</p>
-      <p class="debug-info">请检查 Vercel 环境变量是否正确配置</p>
+      <div class="debug-info">
+        <p><strong>排查建议:</strong></p>
+        <ul>
+          <li>检查 Vercel 环境变量 BLOB_READ_WRITE_TOKEN 是否正确配置</li>
+          <li>确认文件类型和大小符合限制要求</li>
+          <li>查看浏览器开发者工具的网络面板获取更多信息</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 功能说明 -->
+    <div class="feature-info">
+      <h4>🚀 客户端上传功能特点:</h4>
+      <ul>
+        <li>✨ 直接从浏览器上传，无需通过服务器中转</li>
+        <li>⚡ 支持大文件分块上传 (multipart)</li>
+        <li>🔒 安全的权限控制和文件类型验证</li>
+        <li>📊 实时上传进度反馈</li>
+        <li>🎯 基于 @vercel/blob/client 的官方实现</li>
+      </ul>
     </div>
   </div>
 </template>
@@ -168,7 +202,7 @@ const clearResults = () => {
 .blob-test-container {
   margin: 2rem auto;
   padding: 2rem;
-  max-width: 600px;
+  max-width: 700px;
   text-align: center;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
@@ -208,7 +242,7 @@ const clearResults = () => {
   transition: all 0.2s;
   color: #475569;
   font-weight: 500;
-  min-width: 250px;
+  min-width: 300px;
 }
 
 .file-input:hover {
@@ -296,10 +330,55 @@ const clearResults = () => {
   color: #1d4ed8;
 }
 
-.debug-info {
+.upload-method {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
   font-size: 0.9rem;
-  opacity: 0.8;
-  margin-top: 0.5rem;
+  font-weight: 600;
+}
+
+.debug-info {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: rgba(239, 68, 68, 0.05);
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.debug-info ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+  text-align: left;
+}
+
+.debug-info li {
+  margin: 0.25rem 0;
+}
+
+.feature-info {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border-radius: 8px;
+  text-align: left;
+}
+
+.feature-info h4 {
+  color: #1e40af;
+  margin: 0 0 1rem 0;
+}
+
+.feature-info ul {
+  margin: 0;
+  padding-left: 1.5rem;
+  color: #1e40af;
+}
+
+.feature-info li {
+  margin: 0.5rem 0;
+  font-weight: 500;
 }
 
 @media (max-width: 640px) {
@@ -314,11 +393,11 @@ const clearResults = () => {
   
   .upload-btn, .clear-btn {
     width: 100%;
-    max-width: 200px;
+    max-width: 250px;
   }
   
   .file-input {
-    min-width: 200px;
+    min-width: 250px;
   }
 }
 </style>

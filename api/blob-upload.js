@@ -1,4 +1,4 @@
-import { put } from '@vercel/blob';
+import { handleUpload } from '@vercel/blob/client';
 
 export default async function handler(req, res) {
   // 设置 CORS 头
@@ -17,40 +17,45 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 获取查询参数中的文件名
-    const { filename } = req.query;
-    
-    if (!filename) {
-      return res.status(400).json({ error: 'Filename is required in query parameter' });
-    }
+    const body = req.body;
 
-    // 检查请求是否有内容
-    if (!req.body && req.body !== '') {
-      return res.status(400).json({ error: 'Request body is required' });
-    }
-
-    console.log('Uploading file:', filename);
-    console.log('Content-Type:', req.headers['content-type']);
-    console.log('Body type:', typeof req.body);
-
-    // 上传到 Vercel Blob
-    const blob = await put(filename, req.body, {
-      access: 'public',
+    // 使用 Vercel 的 handleUpload 函数处理上传
+    const jsonResponse = await handleUpload({
+      body,
+      request: req,
+      onBeforeGenerateToken: async (pathname, clientPayload) => {
+        // 这里可以添加权限检查逻辑
+        console.log('Uploading file:', pathname);
+        console.log('Client payload:', clientPayload);
+        
+        // 返回访问权限配置
+        return {
+          allowedContentTypes: [
+            'image/jpeg', 
+            'image/png', 
+            'image/webp', 
+            'image/gif',
+            'application/pdf',
+            'text/plain',
+            'video/mp4',
+            'audio/mp3'
+          ],
+          maximumSizeInBytes: 50 * 1024 * 1024, // 50MB 限制
+        };
+      },
+      onUploadCompleted: async ({ blob, tokenPayload }) => {
+        // 上传完成后的回调
+        console.log('Upload completed:', blob);
+        console.log('Token payload:', tokenPayload);
+      },
     });
 
-    console.log('Upload successful:', blob);
-
-    // 返回成功响应
-    return res.status(200).json({
-      success: true,
-      blob: blob,
-      message: 'File uploaded successfully'
-    });
+    return res.status(200).json(jsonResponse);
 
   } catch (error) {
     console.error('Blob upload error:', error);
     return res.status(500).json({ 
-      error: 'Failed to upload to blob storage',
+      error: 'Failed to handle upload',
       details: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
