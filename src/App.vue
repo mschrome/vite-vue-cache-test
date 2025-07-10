@@ -1,6 +1,6 @@
 <script setup>
 import HelloWorld from './components/HelloWorld.vue'
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { upload } from '@vercel/blob/client'
 
 // 文件上传相关的响应式数据
@@ -8,6 +8,22 @@ const inputFileRef = ref(null)
 const uploading = ref(false)
 const uploadResult = ref(null)
 const uploadError = ref(null)
+
+// 资源列表相关的响应式数据
+const blobList = ref([])
+const loadingList = ref(false)
+const listError = ref(null)
+const selectedBlobs = ref([])
+const deleting = ref(false)
+const deleteError = ref(null)
+
+// 当前标签页
+const activeTab = ref('upload')
+
+// 组件挂载时加载资源列表
+onMounted(() => {
+  loadBlobList()
+})
 
 // 文件上传处理函数
 const handleSubmit = async (event) => {
@@ -29,7 +45,7 @@ const handleSubmit = async (event) => {
     const blob = await upload(file.name, file, {
       access: 'public',
       handleUploadUrl: '/api/blob-upload',
-      multipart: true, // 对大文件启用分块上传
+      multipart: true,
       clientPayload: JSON.stringify({
         originalFileName: file.name,
         fileSize: file.size,
@@ -44,6 +60,9 @@ const handleSubmit = async (event) => {
       message: 'File uploaded successfully using client-side upload'
     }
 
+    // 上传成功后重新加载列表
+    await loadBlobList()
+
   } catch (error) {
     console.error('Upload error:', error)
     uploadError.value = `Upload error: ${error.message}`
@@ -52,8 +71,142 @@ const handleSubmit = async (event) => {
   }
 }
 
-// 清除结果
-const clearResults = () => {
+// 加载 Blob 列表
+const loadBlobList = async () => {
+  loadingList.value = true
+  listError.value = null
+  
+  try {
+    const response = await fetch('/api/blob-list')
+    const result = await response.json()
+    
+    if (response.ok) {
+      blobList.value = result.blobs || []
+    } else {
+      listError.value = result.error || 'Failed to load blob list'
+    }
+  } catch (error) {
+    listError.value = `Failed to load blob list: ${error.message}`
+  } finally {
+    loadingList.value = false
+  }
+}
+
+// 删除单个文件
+const deleteBlob = async (url) => {
+  if (!confirm('确定要删除这个文件吗？')) {
+    return
+  }
+  
+  deleting.value = true
+  deleteError.value = null
+  
+  try {
+    const response = await fetch(`/api/blob-delete?url=${encodeURIComponent(url)}`, {
+      method: 'DELETE'
+    })
+    
+    const result = await response.json()
+    
+    if (response.ok) {
+      // 删除成功，重新加载列表
+      await loadBlobList()
+    } else {
+      deleteError.value = result.error || 'Failed to delete file'
+    }
+  } catch (error) {
+    deleteError.value = `Delete error: ${error.message}`
+  } finally {
+    deleting.value = false
+  }
+}
+
+// 批量删除选中的文件
+const deleteSelectedBlobs = async () => {
+  if (selectedBlobs.value.length === 0) {
+    alert('请先选择要删除的文件')
+    return
+  }
+  
+  if (!confirm(`确定要删除 ${selectedBlobs.value.length} 个文件吗？`)) {
+    return
+  }
+  
+  deleting.value = true
+  deleteError.value = null
+  
+  try {
+    const response = await fetch('/api/blob-delete', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        urls: selectedBlobs.value
+      })
+    })
+    
+    const result = await response.json()
+    
+    if (response.ok) {
+      // 删除成功，清空选择并重新加载列表
+      selectedBlobs.value = []
+      await loadBlobList()
+    } else {
+      deleteError.value = result.error || 'Failed to delete files'
+    }
+  } catch (error) {
+    deleteError.value = `Batch delete error: ${error.message}`
+  } finally {
+    deleting.value = false
+  }
+}
+
+// 切换文件选择
+const toggleBlobSelection = (url) => {
+  const index = selectedBlobs.value.indexOf(url)
+  if (index > -1) {
+    selectedBlobs.value.splice(index, 1)
+  } else {
+    selectedBlobs.value.push(url)
+  }
+}
+
+// 全选/取消全选
+const toggleSelectAll = () => {
+  if (selectedBlobs.value.length === blobList.value.length) {
+    selectedBlobs.value = []
+  } else {
+    selectedBlobs.value = blobList.value.map(blob => blob.url)
+  }
+}
+
+// 格式化文件大小
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+// 格式化日期
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleString('zh-CN')
+}
+
+// 获取文件类型图标
+const getFileIcon = (contentType) => {
+  if (contentType.startsWith('image/')) return '🖼️'
+  if (contentType.startsWith('video/')) return '🎥'
+  if (contentType.startsWith('audio/')) return '🎵'
+  if (contentType.includes('pdf')) return '📄'
+  if (contentType.startsWith('text/')) return '📝'
+  return '📁'
+}
+
+// 清除上传结果
+const clearUploadResults = () => {
   uploadResult.value = null
   uploadError.value = null
   if (inputFileRef.value) {
@@ -73,88 +226,162 @@ const clearResults = () => {
   </div>
   <HelloWorld msg="Hello Vue 3 + Vercel" />
   
-  <!-- Vercel Blob 测试区域 -->
-  <div class="blob-test-container">
-    <h2>🗂️ Vercel Blob 客户端上传测试</h2>
-    <p>使用 @vercel/blob/client 进行直接客户端上传</p>
+  <!-- Vercel Blob 管理界面 -->
+  <div class="blob-manager-container">
+    <h2>🗂️ Vercel Blob 存储管理</h2>
     
-    <form @submit="handleSubmit" class="upload-form">
-      <div class="form-section">
-        <input 
-          ref="inputFileRef"
-          name="file" 
-          type="file" 
-          accept="image/jpeg, image/png, image/webp, image/gif, .pdf, .txt, .mp4, .mp3"
-          required
-          :disabled="uploading"
-          class="file-input"
-        />
+    <!-- 标签页导航 -->
+    <div class="tab-navigation">
+      <button 
+        :class="['tab-button', { active: activeTab === 'upload' }]"
+        @click="activeTab = 'upload'"
+      >
+        📤 上传文件
+      </button>
+      <button 
+        :class="['tab-button', { active: activeTab === 'list' }]"
+        @click="activeTab = 'list'; loadBlobList()"
+      >
+        📋 文件列表 {{ blobList.length > 0 ? `(${blobList.length})` : '' }}
+      </button>
+    </div>
+
+    <!-- 上传文件标签页 -->
+    <div v-show="activeTab === 'upload'" class="tab-content">
+      <p>使用 @vercel/blob/client 进行直接客户端上传</p>
+      
+      <form @submit="handleSubmit" class="upload-form">
+        <div class="form-section">
+          <input 
+            ref="inputFileRef"
+            name="file" 
+            type="file" 
+            accept="image/jpeg, image/png, image/webp, image/gif, .pdf, .txt, .mp4, .mp3"
+            required
+            :disabled="uploading"
+            class="file-input"
+          />
+          
+          <button 
+            type="submit"
+            :disabled="uploading"
+            class="upload-btn"
+          >
+            {{ uploading ? '📤 客户端上传中...' : '🚀 客户端上传到 Blob' }}
+          </button>
+        </div>
+      </form>
+      
+      <button 
+        @click="clearUploadResults"
+        class="clear-btn"
+        v-if="uploadResult || uploadError"
+      >
+        🗑️ 清除结果
+      </button>
+
+      <!-- 上传结果 -->
+      <div v-if="uploadResult" class="result success">
+        <h3>✅ 客户端上传成功!</h3>
+        <div class="result-details">
+          <p><strong>🔗 Blob URL:</strong> 
+            <a :href="uploadResult.blob.url" target="_blank" class="blob-link">
+              {{ uploadResult.blob.url }}
+            </a>
+          </p>
+          <p><strong>📁 文件路径:</strong> {{ uploadResult.blob.pathname }}</p>
+          <p><strong>📊 文件大小:</strong> {{ formatFileSize(uploadResult.blob.size) }}</p>
+          <p><strong>📋 内容类型:</strong> {{ uploadResult.blob.contentType || 'unknown' }}</p>
+        </div>
+      </div>
+
+      <!-- 上传错误信息 -->
+      <div v-if="uploadError" class="result error">
+        <h3>❌ 客户端上传失败</h3>
+        <p>{{ uploadError }}</p>
+      </div>
+    </div>
+
+    <!-- 文件列表标签页 -->
+    <div v-show="activeTab === 'list'" class="tab-content">
+      <div class="list-header">
+        <button @click="loadBlobList" :disabled="loadingList" class="refresh-btn">
+          {{ loadingList ? '🔄 加载中...' : '🔄 刷新列表' }}
+        </button>
         
-        <button 
-          type="submit"
-          :disabled="uploading"
-          class="upload-btn"
-        >
-          {{ uploading ? '📤 客户端上传中...' : '🚀 客户端上传到 Blob' }}
+        <div v-if="blobList.length > 0" class="batch-actions">
+          <button @click="toggleSelectAll" class="select-all-btn">
+            {{ selectedBlobs.length === blobList.length ? '❌ 取消全选' : '✅ 全选' }}
+          </button>
+          <button 
+            @click="deleteSelectedBlobs" 
+            :disabled="selectedBlobs.length === 0 || deleting"
+            class="batch-delete-btn"
+          >
+            {{ deleting ? '🗑️ 删除中...' : `🗑️ 删除选中 (${selectedBlobs.length})` }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 加载状态 -->
+      <div v-if="loadingList" class="loading">
+        <p>🔄 正在加载文件列表...</p>
+      </div>
+
+      <!-- 列表错误 -->
+      <div v-if="listError" class="result error">
+        <h3>❌ 加载列表失败</h3>
+        <p>{{ listError }}</p>
+      </div>
+
+      <!-- 删除错误 -->
+      <div v-if="deleteError" class="result error">
+        <h3>❌ 删除失败</h3>
+        <p>{{ deleteError }}</p>
+      </div>
+
+      <!-- 文件列表 -->
+      <div v-if="!loadingList && blobList.length > 0" class="blob-list">
+        <div v-for="blob in blobList" :key="blob.url" class="blob-item">
+          <div class="blob-item-header">
+            <input 
+              type="checkbox" 
+              :checked="selectedBlobs.includes(blob.url)"
+              @change="toggleBlobSelection(blob.url)"
+              class="blob-checkbox"
+            />
+            <span class="file-icon">{{ getFileIcon(blob.contentType || '') }}</span>
+            <div class="blob-info">
+              <h4 class="blob-name">{{ blob.pathname }}</h4>
+              <div class="blob-meta">
+                <span class="file-size">{{ formatFileSize(blob.size) }}</span>
+                <span class="file-type">{{ blob.contentType || 'unknown' }}</span>
+                <span class="upload-date">{{ formatDate(blob.uploadedAt) }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="blob-actions">
+            <a :href="blob.url" target="_blank" class="view-btn">👁️ 查看</a>
+            <a :href="blob.downloadUrl || blob.url" download class="download-btn">📥 下载</a>
+            <button 
+              @click="deleteBlob(blob.url)"
+              :disabled="deleting"
+              class="delete-btn"
+            >
+              🗑️ 删除
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-if="!loadingList && !listError && blobList.length === 0" class="empty-state">
+        <p>📭 暂无文件，请先上传一些文件</p>
+        <button @click="activeTab = 'upload'" class="goto-upload-btn">
+          📤 去上传文件
         </button>
       </div>
-    </form>
-    
-    <button 
-      @click="clearResults"
-      class="clear-btn"
-      v-if="uploadResult || uploadError"
-    >
-      🗑️ 清除结果
-    </button>
-
-    <!-- 上传结果 -->
-    <div v-if="uploadResult" class="result success">
-      <h3>✅ 客户端上传成功!</h3>
-      <div class="result-details">
-        <p><strong>🔗 Blob URL:</strong> 
-          <a :href="uploadResult.blob.url" target="_blank" class="blob-link">
-            {{ uploadResult.blob.url }}
-          </a>
-        </p>
-        <p><strong>📁 文件路径:</strong> {{ uploadResult.blob.pathname }}</p>
-        <p><strong>📊 文件大小:</strong> {{ (uploadResult.blob.size / 1024).toFixed(2) }} KB</p>
-        <p><strong>📋 内容类型:</strong> {{ uploadResult.blob.contentType || 'unknown' }}</p>
-        <p><strong>💾 下载地址:</strong> 
-          <a :href="uploadResult.blob.downloadUrl || uploadResult.blob.url" target="_blank" class="blob-link">
-            {{ uploadResult.blob.downloadUrl || uploadResult.blob.url }}
-          </a>
-        </p>
-        <p><strong>🎯 上传方式:</strong> 
-          <span class="upload-method">客户端直接上传 (Client-side Upload)</span>
-        </p>
-      </div>
-    </div>
-
-    <!-- 错误信息 -->
-    <div v-if="uploadError" class="result error">
-      <h3>❌ 客户端上传失败</h3>
-      <p>{{ uploadError }}</p>
-      <div class="debug-info">
-        <p><strong>排查建议:</strong></p>
-        <ul>
-          <li>检查 Vercel 环境变量 BLOB_READ_WRITE_TOKEN 是否正确配置</li>
-          <li>确认文件类型和大小符合限制要求</li>
-          <li>查看浏览器开发者工具的网络面板获取更多信息</li>
-        </ul>
-      </div>
-    </div>
-
-    <!-- 功能说明 -->
-    <div class="feature-info">
-      <h4>🚀 客户端上传功能特点:</h4>
-      <ul>
-        <li>✨ 直接从浏览器上传，无需通过服务器中转</li>
-        <li>⚡ 支持大文件分块上传 (multipart)</li>
-        <li>🔒 安全的权限控制和文件类型验证</li>
-        <li>📊 实时上传进度反馈</li>
-        <li>🎯 基于 @vercel/blob/client 的官方实现</li>
-      </ul>
     </div>
   </div>
 </template>
@@ -173,54 +400,59 @@ const clearResults = () => {
   filter: drop-shadow(0 0 2em #42b883aa);
 }
 
-.video-container {
-  margin: 2rem auto;
-  padding: 1rem;
-  max-width: 800px;
-  text-align: center;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-}
-
-.video-container h2 {
-  color: #333;
-  margin-bottom: 1rem;
-}
-
-.video-container p {
-  color: #666;
-  margin: 0.5rem 0;
-}
-
-.video-container video {
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Blob 测试样式 */
-.blob-test-container {
+/* Blob 管理容器样式 */
+.blob-manager-container {
   margin: 2rem auto;
   padding: 2rem;
-  max-width: 700px;
-  text-align: center;
+  max-width: 900px;
   border: 2px solid #e2e8f0;
   border-radius: 12px;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
-.blob-test-container h2 {
+.blob-manager-container h2 {
   color: #1e293b;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1.5rem;
   font-size: 1.5rem;
+  text-align: center;
 }
 
-.blob-test-container > p {
-  color: #64748b;
+/* 标签页样式 */
+.tab-navigation {
+  display: flex;
   margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
 }
 
+.tab-button {
+  flex: 1;
+  padding: 1rem 2rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-button:hover {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.tab-button.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.tab-content {
+  min-height: 300px;
+}
+
+/* 上传表单样式 */
 .upload-form {
   margin-bottom: 1rem;
 }
@@ -255,14 +487,14 @@ const clearResults = () => {
   cursor: not-allowed;
 }
 
-.upload-btn, .clear-btn {
-  padding: 0.75rem 2rem;
+.upload-btn, .clear-btn, .refresh-btn, .select-all-btn, .batch-delete-btn, .goto-upload-btn {
+  padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .upload-btn {
@@ -290,6 +522,186 @@ const clearResults = () => {
 .clear-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+/* 列表头部样式 */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.refresh-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+}
+
+.refresh-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+.select-all-btn {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+}
+
+.select-all-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.3);
+}
+
+.batch-delete-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.batch-delete-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+.batch-delete-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* 文件列表样式 */
+.blob-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.blob-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.blob-item:hover {
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.blob-item-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.blob-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.file-icon {
+  font-size: 1.5rem;
+}
+
+.blob-info {
+  flex: 1;
+}
+
+.blob-name {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #1e293b;
+  word-break: break-all;
+}
+
+.blob-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.blob-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.view-btn, .download-btn, .delete-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.view-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+}
+
+.download-btn {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+}
+
+.view-btn:hover, .download-btn:hover, .delete-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.delete-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* 状态样式 */
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: #64748b;
+}
+
+.goto-upload-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: white;
+  margin-top: 1rem;
+}
+
+.goto-upload-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
 }
 
 .result {
@@ -330,74 +742,47 @@ const clearResults = () => {
   color: #1d4ed8;
 }
 
-.upload-method {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  font-weight: 600;
-}
-
-.debug-info {
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: rgba(239, 68, 68, 0.05);
-  border-radius: 6px;
-  font-size: 0.9rem;
-}
-
-.debug-info ul {
-  margin: 0.5rem 0;
-  padding-left: 1.5rem;
-  text-align: left;
-}
-
-.debug-info li {
-  margin: 0.25rem 0;
-}
-
-.feature-info {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  border-radius: 8px;
-  text-align: left;
-}
-
-.feature-info h4 {
-  color: #1e40af;
-  margin: 0 0 1rem 0;
-}
-
-.feature-info ul {
-  margin: 0;
-  padding-left: 1.5rem;
-  color: #1e40af;
-}
-
-.feature-info li {
-  margin: 0.5rem 0;
-  font-weight: 500;
-}
-
-@media (max-width: 640px) {
-  .blob-test-container {
+@media (max-width: 768px) {
+  .blob-manager-container {
     margin: 1rem;
     padding: 1rem;
   }
   
-  .form-section {
-    gap: 0.75rem;
+  .list-header {
+    flex-direction: column;
+    align-items: stretch;
   }
   
-  .upload-btn, .clear-btn {
-    width: 100%;
-    max-width: 250px;
+  .batch-actions {
+    justify-content: center;
+  }
+  
+  .blob-item {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .blob-item-header {
+    justify-content: flex-start;
+  }
+  
+  .blob-actions {
+    justify-content: center;
+  }
+  
+  .blob-meta {
+    flex-direction: column;
+    gap: 0.25rem;
   }
   
   .file-input {
     min-width: 250px;
+  }
+  
+  .tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
   }
 }
 </style>

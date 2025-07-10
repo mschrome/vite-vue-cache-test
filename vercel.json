@@ -2,6 +2,12 @@
   "functions": {
     "api/blob-upload.js": {
       "maxDuration": 30
+    },
+    "api/blob-list.js": {
+      "maxDuration": 10
+    },
+    "api/blob-delete.js": {
+      "maxDuration": 10
     }
   },
   "headers": [
