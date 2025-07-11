@@ -8,6 +8,9 @@
     },
     "api/blob-delete.js": {
       "maxDuration": 10
+    },
+    "api/blob-server-upload.js": {
+      "maxDuration": 30
     }
   },
   "headers": [

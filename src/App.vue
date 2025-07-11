@@ -8,6 +8,7 @@ const inputFileRef = ref(null)
 const uploading = ref(false)
 const uploadResult = ref(null)
 const uploadError = ref(null)
+const uploadMode = ref('client') // 'client' or 'server'
 
 // 资源列表相关的响应式数据
 const blobList = ref([])
@@ -40,31 +41,41 @@ const handleSubmit = async (event) => {
 
   try {
     const file = inputFileRef.value.files[0]
-    
-    // 使用 Vercel 的客户端上传功能
-    const blob = await upload(file.name, file, {
-      access: 'public',
-      handleUploadUrl: '/api/blob-upload',
-      multipart: true,
-      clientPayload: JSON.stringify({
-        originalFileName: file.name,
-        fileSize: file.size,
-        fileType: file.type,
-        uploadedAt: new Date().toISOString()
+    let result
+    if (uploadMode.value === 'client') {
+      // 客户端上传
+      const blob = await upload(file.name, file, {
+        access: 'public',
+        handleUploadUrl: '/api/blob-upload',
+        multipart: true,
+        clientPayload: JSON.stringify({
+          originalFileName: file.name,
+          fileSize: file.size,
+          fileType: file.type,
+          uploadedAt: new Date().toISOString()
+        })
       })
-    })
-
-    uploadResult.value = {
-      success: true,
-      blob: blob,
-      message: 'File uploaded successfully using client-side upload'
+      result = {
+        success: true,
+        blob: blob,
+        message: 'File uploaded successfully using client-side upload',
+        mode: 'client'
+      }
+    } else {
+      // 服务端上传
+      const formData = new FormData()
+      formData.append('file', file)
+      const response = await fetch('/api/blob-server-upload', {
+        method: 'POST',
+        body: formData
+      })
+      result = await response.json()
+      result.mode = 'server'
     }
-
+    uploadResult.value = result
     // 上传成功后重新加载列表
     await loadBlobList()
-
   } catch (error) {
-    console.error('Upload error:', error)
     uploadError.value = `Upload error: ${error.message}`
   } finally {
     uploading.value = false
@@ -248,8 +259,17 @@ const clearUploadResults = () => {
 
     <!-- 上传文件标签页 -->
     <div v-show="activeTab === 'upload'" class="tab-content">
-      <p>使用 @vercel/blob/client 进行直接客户端上传</p>
-      
+      <p>选择上传方式：</p>
+      <div class="upload-mode-switch">
+        <label>
+          <input type="radio" value="client" v-model="uploadMode" />
+          客户端直传（推荐）
+        </label>
+        <label>
+          <input type="radio" value="server" v-model="uploadMode" />
+          服务端中转上传
+        </label>
+      </div>
       <form @submit="handleSubmit" class="upload-form">
         <div class="form-section">
           <input 
@@ -267,11 +287,10 @@ const clearUploadResults = () => {
             :disabled="uploading"
             class="upload-btn"
           >
-            {{ uploading ? '📤 客户端上传中...' : '🚀 客户端上传到 Blob' }}
+            {{ uploading ? (uploadMode === 'client' ? '📤 客户端上传中...' : '📤 服务端上传中...') : (uploadMode === 'client' ? '🚀 客户端上传到 Blob' : '🚀 服务端上传到 Blob') }}
           </button>
         </div>
       </form>
-      
       <button 
         @click="clearUploadResults"
         class="clear-btn"
@@ -279,10 +298,8 @@ const clearUploadResults = () => {
       >
         🗑️ 清除结果
       </button>
-
-      <!-- 上传结果 -->
       <div v-if="uploadResult" class="result success">
-        <h3>✅ 客户端上传成功!</h3>
+        <h3>✅ {{ uploadResult.mode === 'server' ? '服务端上传成功!' : '客户端上传成功!' }}</h3>
         <div class="result-details">
           <p><strong>🔗 Blob URL:</strong> 
             <a :href="uploadResult.blob.url" target="_blank" class="blob-link">
@@ -292,12 +309,11 @@ const clearUploadResults = () => {
           <p><strong>📁 文件路径:</strong> {{ uploadResult.blob.pathname }}</p>
           <p><strong>📊 文件大小:</strong> {{ formatFileSize(uploadResult.blob.size) }}</p>
           <p><strong>📋 内容类型:</strong> {{ uploadResult.blob.contentType || 'unknown' }}</p>
+          <p><strong>🎯 上传方式:</strong> <span class="upload-method">{{ uploadResult.mode === 'server' ? '服务端中转' : '客户端直传' }}</span></p>
         </div>
       </div>
-
-      <!-- 上传错误信息 -->
       <div v-if="uploadError" class="result error">
-        <h3>❌ 客户端上传失败</h3>
+        <h3>❌ 上传失败</h3>
         <p>{{ uploadError }}</p>
       </div>
     </div>
@@ -740,6 +756,28 @@ const clearUploadResults = () => {
 
 .blob-link:hover {
   color: #1d4ed8;
+}
+
+.upload-mode-switch {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+}
+.upload-mode-switch label {
+  cursor: pointer;
+}
+.upload-mode-switch input[type="radio"] {
+  margin-right: 0.5em;
+}
+.upload-method {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
