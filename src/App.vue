@@ -235,7 +235,7 @@ const clearUploadResults = () => {
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
-  <HelloWorld msg="Hello Vue 3 + Vercel new" />
+  <HelloWorld msg="Hello Vue 3 + CF" />
   
   <!-- Vercel Blob 管理界面 -->
   <div class="blob-manager-container">
