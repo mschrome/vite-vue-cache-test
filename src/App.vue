@@ -3,14 +3,14 @@ import HelloWorld from './components/HelloWorld.vue'
 import { ref, onMounted } from 'vue'
 import { upload } from '@vercel/blob/client'
 
-// 文件上传相关的响应式数据
+// File upload related reactive data
 const inputFileRef = ref(null)
 const uploading = ref(false)
 const uploadResult = ref(null)
 const uploadError = ref(null)
 const uploadMode = ref('client') // 'client' or 'server'
 
-// 资源列表相关的响应式数据
+// Resource list related reactive data
 const blobList = ref([])
 const loadingList = ref(false)
 const listError = ref(null)
@@ -18,15 +18,15 @@ const selectedBlobs = ref([])
 const deleting = ref(false)
 const deleteError = ref(null)
 
-// 当前标签页
+// Current tab
 const activeTab = ref('upload')
 
-// 组件挂载时加载资源列表
+// Load resource list when component mounts
 onMounted(() => {
   loadBlobList()
 })
 
-// 文件上传处理函数
+// File upload handler function
 const handleSubmit = async (event) => {
   event.preventDefault()
   
@@ -43,7 +43,7 @@ const handleSubmit = async (event) => {
     const file = inputFileRef.value.files[0]
     let result
     if (uploadMode.value === 'client') {
-      // 客户端上传
+      // Client-side upload
       const blob = await upload(file.name, file, {
         access: 'public',
         handleUploadUrl: '/api/blob-upload',
@@ -62,7 +62,7 @@ const handleSubmit = async (event) => {
         mode: 'client'
       }
     } else {
-      // 服务端上传
+      // Server-side upload
       const formData = new FormData()
       formData.append('file', file)
       const response = await fetch('/api/blob-server-upload', {
@@ -73,7 +73,7 @@ const handleSubmit = async (event) => {
       result.mode = 'server'
     }
     uploadResult.value = result
-    // 上传成功后重新加载列表
+    // Reload list after successful upload
     await loadBlobList()
   } catch (error) {
     uploadError.value = `Upload error: ${error.message}`
@@ -82,7 +82,7 @@ const handleSubmit = async (event) => {
   }
 }
 
-// 加载 Blob 列表
+// Load Blob list
 const loadBlobList = async () => {
   loadingList.value = true
   listError.value = null
@@ -103,9 +103,9 @@ const loadBlobList = async () => {
   }
 }
 
-// 删除单个文件
+// Delete single file
 const deleteBlob = async (url) => {
-  if (!confirm('确定要删除这个文件吗？')) {
+  if (!confirm('Are you sure you want to delete this file?')) {
     return
   }
   
@@ -120,7 +120,7 @@ const deleteBlob = async (url) => {
     const result = await response.json()
     
     if (response.ok) {
-      // 删除成功，重新加载列表
+      // Delete successful, reload list
       await loadBlobList()
     } else {
       deleteError.value = result.error || 'Failed to delete file'
@@ -132,14 +132,14 @@ const deleteBlob = async (url) => {
   }
 }
 
-// 批量删除选中的文件
+// Batch delete selected files
 const deleteSelectedBlobs = async () => {
   if (selectedBlobs.value.length === 0) {
-    alert('请先选择要删除的文件')
+    alert('Please select files to delete first')
     return
   }
   
-  if (!confirm(`确定要删除 ${selectedBlobs.value.length} 个文件吗？`)) {
+  if (!confirm(`Are you sure you want to delete ${selectedBlobs.value.length} files?`)) {
     return
   }
   
@@ -160,7 +160,7 @@ const deleteSelectedBlobs = async () => {
     const result = await response.json()
     
     if (response.ok) {
-      // 删除成功，清空选择并重新加载列表
+      // Delete successful, clear selection and reload list
       selectedBlobs.value = []
       await loadBlobList()
     } else {
@@ -173,7 +173,7 @@ const deleteSelectedBlobs = async () => {
   }
 }
 
-// 切换文件选择
+// Toggle file selection
 const toggleBlobSelection = (url) => {
   const index = selectedBlobs.value.indexOf(url)
   if (index > -1) {
@@ -183,7 +183,7 @@ const toggleBlobSelection = (url) => {
   }
 }
 
-// 全选/取消全选
+// Select all/unselect all
 const toggleSelectAll = () => {
   if (selectedBlobs.value.length === blobList.value.length) {
     selectedBlobs.value = []
@@ -192,7 +192,7 @@ const toggleSelectAll = () => {
   }
 }
 
-// 格式化文件大小
+// Format file size
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 B'
   const k = 1024
@@ -201,12 +201,12 @@ const formatFileSize = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
-// 格式化日期
+// Format date
 const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleString('zh-CN')
+  return new Date(dateString).toLocaleString('en-US')
 }
 
-// 获取文件类型图标
+// Get file type icon
 const getFileIcon = (contentType) => {
   if (contentType.startsWith('image/')) return '🖼️'
   if (contentType.startsWith('video/')) return '🎥'
@@ -216,7 +216,7 @@ const getFileIcon = (contentType) => {
   return '📁'
 }
 
-// 清除上传结果
+// Clear upload results
 const clearUploadResults = () => {
   uploadResult.value = null
   uploadError.value = null
@@ -235,39 +235,39 @@ const clearUploadResults = () => {
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
-  <HelloWorld msg="文件存储管理系统" />
+  <HelloWorld msg="File Storage Management System" />
   
-  <!-- Vercel Blob 管理界面 -->
+  <!-- Vercel Blob Management Interface -->
   <div class="blob-manager-container">
-    <h2>🗂️ Vercel Blob 存储管理</h2>
+    <h2>🗂️ Vercel Blob Storage Management</h2>
     
-    <!-- 标签页导航 -->
+    <!-- Tab Navigation -->
     <div class="tab-navigation">
       <button 
         :class="['tab-button', { active: activeTab === 'upload' }]"
         @click="activeTab = 'upload'"
       >
-        📤 上传文件
+        📤 Upload File
       </button>
       <button 
         :class="['tab-button', { active: activeTab === 'list' }]"
         @click="activeTab = 'list'; loadBlobList()"
       >
-        📋 文件列表 {{ blobList.length > 0 ? `(${blobList.length})` : '' }}
+        📋 File List {{ blobList.length > 0 ? `(${blobList.length})` : '' }}
       </button>
     </div>
 
-    <!-- 上传文件标签页 -->
+    <!-- Upload File Tab -->
     <div v-show="activeTab === 'upload'" class="tab-content">
-      <p>选择上传方式：</p>
+      <p>Select upload method:</p>
       <div class="upload-mode-switch">
         <label>
           <input type="radio" value="client" v-model="uploadMode" />
-          客户端直传（推荐）
+          Client-side direct upload (recommended)
         </label>
         <label>
           <input type="radio" value="server" v-model="uploadMode" />
-          服务端中转上传
+          Server-side relay upload
         </label>
       </div>
       <form @submit="handleSubmit" class="upload-form">
@@ -287,7 +287,7 @@ const clearUploadResults = () => {
             :disabled="uploading"
             class="upload-btn"
           >
-            {{ uploading ? (uploadMode === 'client' ? '📤 客户端上传中...' : '📤 服务端上传中...') : (uploadMode === 'client' ? '🚀 客户端上传到 Blob' : '🚀 服务端上传到 Blob') }}
+            {{ uploading ? (uploadMode === 'client' ? '📤 Client-side uploading...' : '📤 Server-side uploading...') : (uploadMode === 'client' ? '🚀 Client-side upload to Blob' : '🚀 Server-side upload to Blob') }}
           </button>
         </div>
       </form>
@@ -296,67 +296,67 @@ const clearUploadResults = () => {
         class="clear-btn"
         v-if="uploadResult || uploadError"
       >
-        🗑️ 清除结果
+        🗑️ Clear Results
       </button>
       <div v-if="uploadResult" class="result success">
-        <h3>✅ {{ uploadResult.mode === 'server' ? '服务端上传成功!' : '客户端上传成功!' }}</h3>
+        <h3>✅ {{ uploadResult.mode === 'server' ? 'Server-side upload successful!' : 'Client-side upload successful!' }}</h3>
         <div class="result-details">
           <p><strong>🔗 Blob URL:</strong> 
             <a :href="uploadResult.blob.url" target="_blank" class="blob-link">
               {{ uploadResult.blob.url }}
             </a>
           </p>
-          <p><strong>📁 文件路径:</strong> {{ uploadResult.blob.pathname }}</p>
-          <p><strong>📊 文件大小:</strong> {{ formatFileSize(uploadResult.blob.size) }}</p>
-          <p><strong>📋 内容类型:</strong> {{ uploadResult.blob.contentType || 'unknown' }}</p>
-          <p><strong>🎯 上传方式:</strong> <span class="upload-method">{{ uploadResult.mode === 'server' ? '服务端中转' : '客户端直传' }}</span></p>
+          <p><strong>📁 File Path:</strong> {{ uploadResult.blob.pathname }}</p>
+          <p><strong>📊 File Size:</strong> {{ formatFileSize(uploadResult.blob.size) }}</p>
+          <p><strong>📋 Content Type:</strong> {{ uploadResult.blob.contentType || 'unknown' }}</p>
+          <p><strong>🎯 Upload Method:</strong> <span class="upload-method">{{ uploadResult.mode === 'server' ? 'Server-side relay' : 'Client-side direct' }}</span></p>
         </div>
       </div>
       <div v-if="uploadError" class="result error">
-        <h3>❌ 上传失败</h3>
+        <h3>❌ Upload Failed</h3>
         <p>{{ uploadError }}</p>
       </div>
     </div>
 
-    <!-- 文件列表标签页 -->
+    <!-- File List Tab -->
     <div v-show="activeTab === 'list'" class="tab-content">
       <div class="list-header">
         <button @click="loadBlobList" :disabled="loadingList" class="refresh-btn">
-          {{ loadingList ? '🔄 加载中...' : '🔄 刷新列表' }}
+          {{ loadingList ? '🔄 Loading...' : '🔄 Refresh List' }}
         </button>
         
         <div v-if="blobList.length > 0" class="batch-actions">
           <button @click="toggleSelectAll" class="select-all-btn">
-            {{ selectedBlobs.length === blobList.length ? '❌ 取消全选' : '✅ 全选' }}
+            {{ selectedBlobs.length === blobList.length ? '❌ Cancel All' : '✅ Select All' }}
           </button>
           <button 
             @click="deleteSelectedBlobs" 
             :disabled="selectedBlobs.length === 0 || deleting"
             class="batch-delete-btn"
           >
-            {{ deleting ? '🗑️ 删除中...' : `🗑️ 删除选中 (${selectedBlobs.length})` }}
+            {{ deleting ? '🗑️ Deleting...' : `🗑️ Delete Selected (${selectedBlobs.length})` }}
           </button>
         </div>
       </div>
 
-      <!-- 加载状态 -->
+      <!-- Loading State -->
       <div v-if="loadingList" class="loading">
-        <p>🔄 正在加载文件列表...</p>
+        <p>🔄 Loading file list...</p>
       </div>
 
-      <!-- 列表错误 -->
+      <!-- List Error -->
       <div v-if="listError" class="result error">
-        <h3>❌ 加载列表失败</h3>
+        <h3>❌ Failed to load list</h3>
         <p>{{ listError }}</p>
       </div>
 
-      <!-- 删除错误 -->
+      <!-- Delete Error -->
       <div v-if="deleteError" class="result error">
-        <h3>❌ 删除失败</h3>
+        <h3>❌ Delete failed</h3>
         <p>{{ deleteError }}</p>
       </div>
 
-      <!-- 文件列表 -->
+      <!-- File List -->
       <div v-if="!loadingList && blobList.length > 0" class="blob-list">
         <div v-for="blob in blobList" :key="blob.url" class="blob-item">
           <div class="blob-item-header">
@@ -378,24 +378,24 @@ const clearUploadResults = () => {
           </div>
           
           <div class="blob-actions">
-            <a :href="blob.url" target="_blank" class="view-btn">👁️ 查看</a>
-            <a :href="blob.downloadUrl || blob.url" download class="download-btn">📥 下载</a>
+            <a :href="blob.url" target="_blank" class="view-btn">👁️ View</a>
+            <a :href="blob.downloadUrl || blob.url" download class="download-btn">📥 Download</a>
             <button 
               @click="deleteBlob(blob.url)"
               :disabled="deleting"
               class="delete-btn"
             >
-              🗑️ 删除
+              🗑️ Delete
             </button>
           </div>
         </div>
       </div>
 
-      <!-- 空状态 -->
+      <!-- Empty State -->
       <div v-if="!loadingList && !listError && blobList.length === 0" class="empty-state">
-        <p>📭 暂无文件，请先上传一些文件</p>
+        <p>📭 No files yet, please upload some files first</p>
         <button @click="activeTab = 'upload'" class="goto-upload-btn">
-          📤 去上传文件
+          📤 Go Upload Files
         </button>
       </div>
     </div>
@@ -416,7 +416,7 @@ const clearUploadResults = () => {
   filter: drop-shadow(0 0 2em #42b883aa);
 }
 
-/* Blob 管理容器样式 */
+/* Blob Management Container Styles */
 .blob-manager-container {
   margin: 2rem auto;
   padding: 2rem;
@@ -434,7 +434,7 @@ const clearUploadResults = () => {
   text-align: center;
 }
 
-/* 标签页样式 */
+/* Tab Styles */
 .tab-navigation {
   display: flex;
   margin-bottom: 2rem;
@@ -468,7 +468,7 @@ const clearUploadResults = () => {
   min-height: 300px;
 }
 
-/* 上传表单样式 */
+/* Upload Form Styles */
 .upload-form {
   margin-bottom: 1rem;
 }
@@ -540,7 +540,7 @@ const clearUploadResults = () => {
   box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
 }
 
-/* 列表头部样式 */
+/* List Header Styles */
 .list-header {
   display: flex;
   justify-content: space-between;
@@ -595,7 +595,7 @@ const clearUploadResults = () => {
   cursor: not-allowed;
 }
 
-/* 文件列表样式 */
+/* File List Styles */
 .blob-list {
   display: flex;
   flex-direction: column;
@@ -696,7 +696,7 @@ const clearUploadResults = () => {
   transform: none;
 }
 
-/* 状态样式 */
+/* Status Styles */
 .loading {
   text-align: center;
   padding: 2rem;
