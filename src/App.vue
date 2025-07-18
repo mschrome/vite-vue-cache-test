@@ -63,7 +63,7 @@ const clearResults = () => {
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
-  <HelloWorld msg="Hello Vue 3 + Vercel cancel" />
+  <HelloWorld msg="Hello Vue 3 + Vercel prd~" />
   
   <!-- Vercel Blob 测试区域 -->
   <div class="blob-test-container">
