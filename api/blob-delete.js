@@ -1,34 +1,34 @@
 import { del } from '@vercel/blob';
 
 export default async function handler(req, res) {
-  // Set CORS headers
+  // 设置 CORS 头
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'DELETE, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle OPTIONS request
+  // 处理 OPTIONS 请求
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Allow DELETE and POST requests
+  // 允许 DELETE 和 POST 请求
   if (req.method !== 'DELETE' && req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    // Get URLs to delete
+    // 获取要删除的 URL
     let urls;
     
     if (req.method === 'DELETE') {
-      // DELETE request: get single URL from query parameters
+      // DELETE 请求：从查询参数获取单个 URL
       const { url } = req.query;
       if (!url) {
         return res.status(400).json({ error: 'URL parameter is required' });
       }
       urls = [url];
     } else {
-      // POST request: get URL array from request body (supports batch delete)
+      // POST 请求：从请求体获取 URL 数组（支持批量删除）
       const body = req.body;
       if (!body || !body.urls) {
         return res.status(400).json({ error: 'URLs array is required in request body' });
@@ -42,12 +42,12 @@ export default async function handler(req, res) {
 
     console.log('Deleting blobs:', urls);
 
-    // Delete Blob(s)
+    // 删除 Blob(s)
     if (urls.length === 1) {
-      // Single delete
+      // 单个删除
       await del(urls[0]);
     } else {
-      // Batch delete
+      // 批量删除
       await del(urls);
     }
 

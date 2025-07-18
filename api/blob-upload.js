@@ -1,17 +1,17 @@
 import { handleUpload } from '@vercel/blob/client';
 
 export default async function handler(req, res) {
-  // Set CORS headers
+  // 设置 CORS 头
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // Handle OPTIONS request
+  // 处理 OPTIONS 请求
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Only allow POST requests
+  // 只允许 POST 请求
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -19,16 +19,16 @@ export default async function handler(req, res) {
   try {
     const body = req.body;
 
-    // Use Vercel handleUpload function to process upload
+    // 使用 Vercel 的 handleUpload 函数处理上传
     const jsonResponse = await handleUpload({
       body,
       request: req,
       onBeforeGenerateToken: async (pathname, clientPayload) => {
-        // Permission check logic can be added here
+        // 这里可以添加权限检查逻辑
         console.log('Uploading file:', pathname);
         console.log('Client payload:', clientPayload);
         
-        // Return access permission configuration
+        // 返回访问权限配置
         return {
           allowedContentTypes: [
             'image/jpeg', 
@@ -40,11 +40,11 @@ export default async function handler(req, res) {
             'video/mp4',
             'audio/mp3'
           ],
-          maximumSizeInBytes: 50 * 1024 * 1024, // 50MB limit
+          maximumSizeInBytes: 50 * 1024 * 1024, // 50MB 限制
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
-        // Callback after upload completed
+        // 上传完成后的回调
         console.log('Upload completed:', blob);
         console.log('Token payload:', tokenPayload);
       },
@@ -62,9 +62,9 @@ export default async function handler(req, res) {
   }
 }
 
-// Configure API route
+// 配置 API 路由
 export const config = {
   api: {
-    bodyParser: false, // Disable default body parser to handle raw data
+    bodyParser: false, // 禁用默认的 body parser 以处理原始数据
   },
 }; 
