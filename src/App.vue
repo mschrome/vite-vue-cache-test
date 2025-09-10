@@ -235,11 +235,21 @@ const clearUploadResults = () => {
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
-  <HelloWorld msg="文件存储管理系统" />
+  <HelloWorld msg="文件存储管理系统 new CLI" />
+  
+  <!-- EdgeOne Pages rewrite 测试链接 -->
+  <div style="margin: 1rem 0; text-align: center;">
+    <a href="/assets-test/hello.txt" target="_blank" style="color: #16a34a; text-decoration: underline;">
+      🔁 测试 EdgeOne 重写：打开 /assets-test/hello.txt
+    </a>
+    <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">
+      预期应加载自 <code>/assets-new/hello.txt</code>
+    </p>
+  </div>
   
   <!-- Vercel Blob 管理界面 -->
   <div class="blob-manager-container">
-    <h2>🗂️ Vercel Blob 存储管理</h2>
+    <h2>🗂️ Vercel Blob 存储管理 2</h2>
     
     <!-- 标签页导航 -->
     <div class="tab-navigation">
