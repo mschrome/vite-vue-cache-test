@@ -2,9 +2,6 @@
   "routes": [
     { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/api/spa-404" }
-  ],
-  "rewrites": [
-    { "source": "/assets-test/*", "destination": "/assets-new/:splat" }
   ]
 }
 
