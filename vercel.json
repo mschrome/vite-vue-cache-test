@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    { "source": "/assets-test/*", "destination": "/assets-new/:splat" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+
+
