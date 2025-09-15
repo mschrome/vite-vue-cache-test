@@ -235,6 +235,12 @@ const clearUploadResults = () => {
       <img src="../assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
+  
+  <!-- 简单导航入口 -->
+  <nav class="app-nav">
+    <router-link to="/">首页</router-link>
+    <router-link to="/test">Test 页面</router-link>
+  </nav>
   <HelloWorld msg="文件存储管理系统 new CLI" />
   
   <!-- EdgeOne Pages rewrite 测试链接 -->
@@ -424,6 +430,22 @@ const clearUploadResults = () => {
 }
 .logo.vue:hover {
   filter: drop-shadow(0 0 2em #42b883aa);
+}
+
+/* 顶部导航样式 */
+.app-nav {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 0.5rem 0 1rem;
+}
+.app-nav a {
+  color: #475569;
+  text-decoration: none;
+  font-weight: 600;
+}
+.app-nav a.router-link-active {
+  color: #3b82f6;
 }
 
 /* Blob 管理容器样式 */
