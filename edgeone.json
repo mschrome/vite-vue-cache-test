@@ -1,6 +1,6 @@
 {
   "rewrites": [
     { "source": "/assets-test/*", "destination": "/assets-new/:splat" },
-    { "source": "/(.*)", "destination": "/spa-404" }
+    { "source": "/*", "destination": "/spa-404" }
   ]
 }
