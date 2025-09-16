@@ -5,14 +5,21 @@ export default async (request, context) => {
     return response
   }
 
-  // 读取构建产物的 index.html 作为内容
+  // 内置路由白名单（正则）
   const url = new URL(request.url)
+  const allowedRoutePatterns = [
+    /^\/$/,
+    /^\/test$/,
+  ]
+  const isKnownRoute = allowedRoutePatterns.some((re) => re.test(url.pathname))
+
+  // 读取构建产物的 index.html 作为内容
   const origin = url.origin
   const indexUrl = `${origin}/index.html`
   const indexResp = await fetch(indexUrl)
 
   return new Response(indexResp.body, {
-    status: 404,
+    status: isKnownRoute ? 200 : 404,
     headers: {
       'Content-Type': 'text/html; charset=utf-8',
       // 继承一些常见缓存策略，可按需调整
