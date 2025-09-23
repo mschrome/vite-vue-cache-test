@@ -243,6 +243,20 @@ const clearUploadResults = () => {
   </nav>
   <HelloWorld msg="文件存储管理系统 new CLI" />
   
+  <!-- WebP 测试展示 -->
+  <div style="text-align: center; margin: 1rem 0;">
+    <p>🖼️ WebP 测试：</p>
+    <img 
+      src="/test.webp" 
+      alt="WebP test image" 
+      style="max-width: 360px; width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0;"
+    />
+    <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">
+      来自 <code>/public/test.webp</code> · 
+      <a href="/test.webp" target="_blank" style="color: #16a34a; text-decoration: underline;">打开原图</a>
+    </p>
+  </div>
+  
   <!-- EdgeOne Pages rewrite 测试链接 -->
   <div style="margin: 1rem 0; text-align: center;">
     <a href="/assets-test/hello.txt" target="_blank" style="color: #16a34a; text-decoration: underline;">
