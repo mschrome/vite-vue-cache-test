@@ -1,0 +1,4 @@
+Hello from assets-new via EdgeOne rewrite!
+If you see this at /assets-test/hello.txt, rewrite works.
+
+

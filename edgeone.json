@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/not-found", "destination": "/spa-404" }
+  ]
+}

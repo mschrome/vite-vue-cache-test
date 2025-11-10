@@ -10,7 +10,8 @@
   "dependencies": {
     "@vercel/blob": "^1.1.1",
     "formidable": "^3.5.4",
-    "vue": "^3.2.45"
+    "vue": "^3.2.45",
+    "vue-router": "^4.5.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.0.0",
