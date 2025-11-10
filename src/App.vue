@@ -2,7 +2,6 @@
 </script>
 
 <template>
-<<<<<<< HEAD
   <div>
     <a href="https://vitejs.dev" target="_blank">
       <img src="/vite.svg" class="logo" alt="Vite logo" />
@@ -176,7 +175,4 @@
       </div>
     </div>
   </div>
-=======
-  <router-view />
->>>>>>> 10316ad901773fd7c4933d0a30789fcc44897390
 </template>
