@@ -28,7 +28,7 @@
         :class="['tab-button', { active: activeTab === 'list' }]"
         @click="activeTab = 'list'; loadBlobList()"
       >
-        📋 文件列表 {{ blobList.length > 0 ? `(${blobList.length})` : '' }}
+        📋 文件列表 {{ blobList?.length > 0 ? `(${blobList?.length})` : '' }}
       </button>
     </div>
 
@@ -100,9 +100,9 @@
           {{ loadingList ? '🔄 加载中...' : '🔄 刷新列表' }}
         </button>
         
-        <div v-if="blobList.length > 0" class="batch-actions">
+        <div v-if="blobList?.length > 0" class="batch-actions">
           <button @click="toggleSelectAll" class="select-all-btn">
-            {{ selectedBlobs.length === blobList.length ? '❌ 取消全选' : '✅ 全选' }}
+            {{ selectedBlobs.length === blobList?.length ? '❌ 取消全选' : '✅ 全选' }}
           </button>
           <button 
             @click="deleteSelectedBlobs" 
@@ -132,7 +132,7 @@
       </div>
 
       <!-- 文件列表 -->
-      <div v-if="!loadingList && blobList.length > 0" class="blob-list">
+      <div v-if="!loadingList && blobList?.length > 0" class="blob-list">
         <div v-for="blob in blobList" :key="blob.url" class="blob-item">
           <div class="blob-item-header">
             <input 
@@ -167,7 +167,7 @@
       </div>
 
       <!-- 空状态 -->
-      <div v-if="!loadingList && !listError && blobList.length === 0" class="empty-state">
+      <div v-if="!loadingList && !listError && blobList?.length === 0" class="empty-state">
         <p>📭 暂无文件，请先上传一些文件</p>
         <button @click="activeTab = 'upload'" class="goto-upload-btn">
           📤 去上传文件
