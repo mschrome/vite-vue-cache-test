@@ -9,5 +9,20 @@
         }
       ]
     }
-  ]
+  ],
+  "node-function": {
+    "included_files": [
+      "assets/**",
+      "assets2/**"
+    ],
+    "external_node_modules": [
+      "@koa/bodyparser",
+      "@koa/router",
+      "koa",
+      "koa-body",
+      "koa-compose",
+      "koa-json",
+      "svg-captcha"
+    ]
+  }
 }

@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "environment": "production",
+  "features": {
+    "included_files": true,
+    "external_modules": true
+  },
+  "message": "This file is included via included_files configuration"
+}

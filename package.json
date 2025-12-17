@@ -4,12 +4,20 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:functions": "edgeone pages dev",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@koa/bodyparser": "^5.1.1",
+    "@koa/router": "^13.1.0",
     "@vercel/blob": "^1.1.1",
     "formidable": "^3.5.4",
+    "koa": "^2.15.3",
+    "koa-body": "^6.0.1",
+    "koa-compose": "^4.1.0",
+    "koa-json": "^2.0.2",
+    "svg-captcha": "^1.4.0",
     "vue": "^3.2.45",
     "vue-router": "^4.5.1"
   },

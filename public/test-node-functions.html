@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EdgeOne Pages Node Functions 测试页面</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .header {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      margin-bottom: 30px;
+    }
+    
+    .header h1 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      color: #666;
+      line-height: 1.6;
+    }
+    
+    .test-section {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .test-section h2 {
+      color: #333;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #667eea;
+    }
+    
+    .test-group {
+      margin-bottom: 20px;
+    }
+    
+    .test-group h3 {
+      color: #555;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .result-box {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 5px;
+      padding: 15px;
+      margin-top: 10px;
+      display: none;
+    }
+    
+    .result-box.show {
+      display: block;
+    }
+    
+    .result-box h4 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    
+    .result-box pre {
+      background: #2d2d2d;
+      color: #f8f8f2;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .status.loading {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .captcha-display {
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 5px;
+      text-align: center;
+    }
+    
+    .captcha-display img {
+      max-width: 100%;
+      border: 2px solid #dee2e6;
+      border-radius: 5px;
+    }
+    
+    .config-info {
+      background: #e7f3ff;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 5px;
+    }
+    
+    .config-info h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    
+    .config-info code {
+      background: white;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚀 EdgeOne Pages Node Functions 测试页面</h1>
+      <p>测试 <code>included_files</code> 和 <code>external_node_modules</code> 配置能力</p>
+      <p style="margin-top: 10px; color: #999; font-size: 14px;">
+        配置文件：<code>edgeone.json</code> | 
+        测试文档：<code>TEST_GUIDE.md</code>
+      </p>
+    </div>
+
+    <!-- 调试工具 -->
+    <div class="test-section" style="background: #fff3cd; border-left: 4px solid #ffc107;">
+      <h2>🔍 调试工具</h2>
+      <p style="margin-bottom: 15px; color: #666;">
+        如果测试失败，先运行此调试工具查看文件系统结构
+      </p>
+      <div class="button-group">
+        <button onclick="debugFilesystem()" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+          🐛 调试文件系统
+        </button>
+      </div>
+      <div id="result-debug" class="result-box"></div>
+    </div>
+
+    <!-- 测试 1: included_files -->
+    <div class="test-section">
+      <h2>📁 测试 1: included_files 配置</h2>
+      <p style="margin-bottom: 15px; color: #666;">
+        测试在 Node Functions 中读取外部静态资源文件
+      </p>
+      
+      <div class="test-group">
+        <h3>读取 assets/ 目录文件：</h3>
+        <div class="button-group">
+          <button onclick="testIncludedFile('config.json')">读取 config.json</button>
+          <button onclick="testIncludedFile('data.md')">读取 data.md</button>
+        </div>
+      </div>
+      
+      <div class="test-group">
+        <h3>读取 assets2/ 目录文件：</h3>
+        <div class="button-group">
+          <button onclick="testIncludedFile('secret.txt')">读取 secret.txt</button>
+          <button onclick="testIncludedFile('metadata.json')">读取 metadata.json</button>
+        </div>
+      </div>
+      
+      <div id="result-included-files" class="result-box"></div>
+    </div>
+
+    <!-- 测试 2: external_node_modules -->
+    <div class="test-section">
+      <h2>📦 测试 2: external_node_modules 配置</h2>
+      <p style="margin-bottom: 15px; color: #666;">
+        测试使用外部 npm 包（不打包进 Function）
+      </p>
+      
+      <div class="test-group">
+        <h3>测试所有外部模块：</h3>
+        <div class="button-group">
+          <button onclick="testExternalModules()">测试所有模块</button>
+          <button onclick="testExternalModules('koa')">测试 Koa</button>
+          <button onclick="testExternalModules('router')">测试 Router</button>
+          <button onclick="testExternalModules('captcha')">测试 SVG Captcha</button>
+        </div>
+      </div>
+      
+      <div id="result-external-modules" class="result-box"></div>
+    </div>
+
+    <!-- 测试 3: SVG Captcha -->
+    <div class="test-section">
+      <h2>🎨 测试 3: SVG Captcha 生成</h2>
+      <p style="margin-bottom: 15px; color: #666;">
+        测试 svg-captcha 外部模块功能
+      </p>
+      
+      <div class="test-group">
+        <h3>生成验证码：</h3>
+        <div class="button-group">
+          <button onclick="testCaptcha()">生成默认验证码</button>
+          <button onclick="testCaptcha('6')">生成6位验证码</button>
+          <button onclick="testCaptcha(null, 'math')">生成数学验证码</button>
+          <button onclick="testCaptcha(null, null, 'json')">获取 JSON 格式</button>
+        </div>
+      </div>
+      
+      <div id="result-captcha" class="result-box"></div>
+      <div id="captcha-display" class="captcha-display" style="display: none;"></div>
+    </div>
+
+    <!-- 测试 4: Koa Server -->
+    <div class="test-section">
+      <h2>🌐 测试 4: Koa 完整服务器</h2>
+      <p style="margin-bottom: 15px; color: #666;">
+        测试 Koa 框架及多个中间件集成
+      </p>
+      
+      <div class="test-group">
+        <h3>Koa 路由测试：</h3>
+        <div class="button-group">
+          <button onclick="testKoaServer()">服务器信息</button>
+          <button onclick="testKoaServer('/api/hello')">Hello 端点</button>
+          <button onclick="testKoaServer('/api/echo', 'POST')">Echo 端点 (POST)</button>
+          <button onclick="testKoaServer('/api/config')">配置信息</button>
+        </div>
+      </div>
+      
+      <div id="result-koa-server" class="result-box"></div>
+    </div>
+
+    <!-- 配置信息 -->
+    <div class="config-info">
+      <h3>📝 edgeone.json 配置</h3>
+      <pre style="background: white; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>{
+  "node-function": {
+    "included_files": [
+      "assets/**",
+      "assets2/**"
+    ],
+    "external_node_modules": [
+      "@koa/bodyparser",
+      "@koa/router",
+      "koa",
+      "koa-body",
+      "koa-compose",
+      "koa-json",
+      "svg-captcha"
+    ]
+  }
+}</code></pre>
+    </div>
+  </div>
+
+  <script>
+    // 调试文件系统
+    async function debugFilesystem() {
+      const resultBox = document.getElementById('result-debug');
+      resultBox.innerHTML = '<span class="status loading">Loading...</span> 正在检查文件系统...';
+      resultBox.classList.add('show');
+      
+      try {
+        const response = await fetch('/debug-filesystem');
+        const data = await response.json();
+        
+        const status = data.success ? 'success' : 'error';
+        
+        // 高亮显示存在的路径
+        let pathInfo = '<h4>📂 路径检查结果：</h4><ul style="list-style: none; padding: 0;">';
+        for (const [name, info] of Object.entries(data.pathChecks || {})) {
+          const icon = info.exists ? '✅' : '❌';
+          const color = info.exists ? '#28a745' : '#dc3545';
+          pathInfo += `<li style="margin: 5px 0; color: ${color};">${icon} <strong>${name}</strong>: ${info.path}</li>`;
+          if (info.exists && info.contents && info.contents.length > 0) {
+            pathInfo += `<li style="margin-left: 20px; font-size: 12px; color: #666;">包含: ${info.contents.join(', ')}</li>`;
+          }
+        }
+        pathInfo += '</ul>';
+        
+        resultBox.innerHTML = `
+          <h4><span class="status ${status}">${data.success ? '✅ 成功' : '❌ 失败'}</span> ${data.message}</h4>
+          ${pathInfo}
+          <h4 style="margin-top: 20px;">📋 完整响应：</h4>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultBox.innerHTML = `
+          <h4><span class="status error">❌ 错误</span> 请求失败</h4>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+
+    // 测试 included_files
+    async function testIncludedFile(fileName) {
+      const resultBox = document.getElementById('result-included-files');
+      resultBox.innerHTML = '<span class="status loading">Loading...</span> 正在读取文件...';
+      resultBox.classList.add('show');
+      
+      try {
+        const response = await fetch(`/test-included-files?file=${fileName}`);
+        const data = await response.json();
+        
+        const status = data.success ? 'success' : 'error';
+        resultBox.innerHTML = `
+          <h4><span class="status ${status}">${data.success ? '✅ 成功' : '❌ 失败'}</span> ${data.message}</h4>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultBox.innerHTML = `
+          <h4><span class="status error">❌ 错误</span> 请求失败</h4>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+
+    // 测试 external_node_modules
+    async function testExternalModules(module = null) {
+      const resultBox = document.getElementById('result-external-modules');
+      resultBox.innerHTML = '<span class="status loading">Loading...</span> 正在测试模块...';
+      resultBox.classList.add('show');
+      
+      try {
+        const url = module ? `/test-external-modules?module=${module}` : '/test-external-modules';
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        const status = data.success ? 'success' : 'error';
+        resultBox.innerHTML = `
+          <h4><span class="status ${status}">${data.success ? '✅ 成功' : '❌ 失败'}</span> ${data.message}</h4>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultBox.innerHTML = `
+          <h4><span class="status error">❌ 错误</span> 请求失败</h4>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+
+    // 测试 Captcha
+    async function testCaptcha(size = null, type = null, format = null) {
+      const resultBox = document.getElementById('result-captcha');
+      const displayBox = document.getElementById('captcha-display');
+      resultBox.innerHTML = '<span class="status loading">Loading...</span> 正在生成验证码...';
+      resultBox.classList.add('show');
+      displayBox.style.display = 'none';
+      
+      try {
+        let url = '/test-captcha';
+        const params = [];
+        if (size) params.push(`size=${size}`);
+        if (type) params.push(`type=${type}`);
+        if (format) params.push(`format=${format}`);
+        if (params.length > 0) url += '?' + params.join('&');
+        
+        const response = await fetch(url);
+        
+        if (format === 'json') {
+          const data = await response.json();
+          const status = data.success ? 'success' : 'error';
+          resultBox.innerHTML = `
+            <h4><span class="status ${status}">${data.success ? '✅ 成功' : '❌ 失败'}</span> ${data.message}</h4>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          `;
+          
+          if (data.success && data.captcha.svg) {
+            displayBox.innerHTML = `<h4>验证码预览：</h4>${data.captcha.svg}<p style="margin-top: 10px; color: #666;">答案: ${data.captcha.text}</p>`;
+            displayBox.style.display = 'block';
+          }
+        } else {
+          const svg = await response.text();
+          const captchaText = response.headers.get('X-Captcha-Text');
+          
+          resultBox.innerHTML = `
+            <h4><span class="status success">✅ 成功</span> SVG 验证码生成成功</h4>
+            <p style="color: #666; margin-top: 10px;">验证码已在下方显示</p>
+          `;
+          
+          displayBox.innerHTML = `
+            <h4>验证码预览：</h4>
+            ${svg}
+            <p style="margin-top: 10px; color: #666;">答案: ${captchaText}</p>
+          `;
+          displayBox.style.display = 'block';
+        }
+      } catch (error) {
+        resultBox.innerHTML = `
+          <h4><span class="status error">❌ 错误</span> 请求失败</h4>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+
+    // 测试 Koa Server
+    async function testKoaServer(path = '', method = 'GET') {
+      const resultBox = document.getElementById('result-koa-server');
+      resultBox.innerHTML = '<span class="status loading">Loading...</span> 正在请求...';
+      resultBox.classList.add('show');
+      
+      try {
+        const url = '/test-koa-server' + path;
+        const options = {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        };
+        
+        if (method === 'POST') {
+          options.body = JSON.stringify({
+            message: 'Hello from EdgeOne Pages!',
+            timestamp: new Date().toISOString()
+          });
+        }
+        
+        const response = await fetch(url, options);
+        const data = await response.json();
+        
+        const status = data.success ? 'success' : 'error';
+        resultBox.innerHTML = `
+          <h4><span class="status ${status}">${data.success ? '✅ 成功' : '❌ 失败'}</span> ${data.message || '请求完成'}</h4>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (error) {
+        resultBox.innerHTML = `
+          <h4><span class="status error">❌ 错误</span> 请求失败</h4>
+          <pre>${error.message}</pre>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>
