@@ -10,7 +10,7 @@
       ]
     }
   ],
-  "node-function": {
+  "node-functions": {
     "included_files": [
       "assets/**",
       "assets2/**"

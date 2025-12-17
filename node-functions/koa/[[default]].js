@@ -1,12 +1,17 @@
 /**
- * Node Function: Test external_node_modules configuration
+ * EdgeOne Pages Node Function - Koa Application
  * 
- * This function tests the ability to use external npm packages
- * configured in edgeone.json
+ * This is a unified Koa application that combines:
+ * 1. External modules testing functionality
+ * 2. Complete Koa server with routing examples
  * 
- * Test URLs:
- * - /test-external-modules (GET) - Test all external modules
- * - /test-external-modules?module=koa (GET) - Test specific module
+ * Routes:
+ * - GET  /koa                          - Server info
+ * - GET  /koa/test-modules             - Test all external modules
+ * - GET  /koa/test-modules?module=xxx  - Test specific module
+ * - GET  /koa/api/hello                - Hello endpoint
+ * - POST /koa/api/echo                 - Echo request body
+ * - GET  /koa/api/config               - Configuration info
  */
 
 import Koa from 'koa';
@@ -16,10 +21,42 @@ import koaJson from 'koa-json';
 import compose from 'koa-compose';
 import svgCaptcha from 'svg-captcha';
 
-export function onRequest(context) {
-  const { request } = context;
-  const url = new URL(request.url);
-  const testModule = url.searchParams.get('module');
+// Initialize Koa app and router
+const app = new Koa();
+const router = new Router();
+
+// ==================== Routes ====================
+
+// Root route - Server info
+router.get('/', (ctx) => {
+  ctx.body = {
+    success: true,
+    message: '✅ Koa server running with external modules',
+    server: 'EdgeOne Pages Node Function',
+    framework: 'Koa',
+    modules: [
+      'koa',
+      '@koa/router',
+      '@koa/bodyparser',
+      'koa-json',
+      'koa-compose',
+      'svg-captcha'
+    ],
+    routes: [
+      'GET  /',
+      'GET  /test-modules',
+      'GET  /test-modules?module=xxx',
+      'GET  /api/hello',
+      'POST /api/echo',
+      'GET  /api/config'
+    ],
+    timestamp: new Date().toISOString()
+  };
+});
+
+// Test external modules route
+router.get('/test-modules', async (ctx) => {
+  const testModule = ctx.query.module;
   
   const results = {
     timestamp: new Date().toISOString(),
@@ -30,7 +67,7 @@ export function onRequest(context) {
     // Test 1: Koa
     if (!testModule || testModule === 'koa') {
       try {
-        const app = new Koa();
+        const testApp = new Koa();
         results.tests.koa = {
           success: true,
           version: 'imported',
@@ -47,13 +84,13 @@ export function onRequest(context) {
     // Test 2: @koa/router
     if (!testModule || testModule === 'router') {
       try {
-        const router = new Router();
-        router.get('/test', (ctx) => {
+        const testRouter = new Router();
+        testRouter.get('/test', (ctx) => {
           ctx.body = 'test';
         });
         results.tests['@koa/router'] = {
           success: true,
-          routes: router.stack.length,
+          routes: testRouter.stack.length,
           message: '✅ @koa/router imported and configured'
         };
       } catch (err) {
@@ -153,30 +190,107 @@ export function onRequest(context) {
     
     const allPassed = passedTests === totalTests;
     
-    return new Response(JSON.stringify({
+    ctx.status = allPassed ? 200 : 500;
+    ctx.body = {
       success: allPassed,
       message: allPassed 
         ? '✅ All external modules working correctly!' 
         : '⚠️ Some modules failed. Check edgeone.json configuration.',
       ...results
-    }, null, 2), {
-      status: allPassed ? 200 : 500,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+    };
     
   } catch (error) {
-    return new Response(JSON.stringify({
+    ctx.status = 500;
+    ctx.body = {
       success: false,
       error: error.message,
       stack: error.stack,
       message: 'Failed to test external modules. Check external_node_modules in edgeone.json'
-    }, null, 2), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    });
+    };
   }
-}
+});
+
+// API: Hello endpoint
+router.get('/api/hello', (ctx) => {
+  ctx.body = {
+    success: true,
+    message: 'Hello from Koa Router!',
+    route: '/api/hello',
+    method: ctx.method,
+    timestamp: new Date().toISOString()
+  };
+});
+
+// API: Echo endpoint (POST)
+router.post('/api/echo', (ctx) => {
+  ctx.body = {
+    success: true,
+    message: 'Echo endpoint',
+    received: ctx.request.body,
+    headers: ctx.request.headers,
+    method: ctx.method,
+    timestamp: new Date().toISOString()
+  };
+});
+
+// API: Config endpoint
+router.get('/api/config', (ctx) => {
+  ctx.body = {
+    success: true,
+    edgeoneConfig: {
+      'node-function': {
+        'included_files': [
+          'assets/**',
+          'assets2/**'
+        ],
+        'external_node_modules': [
+          'koa',
+          '@koa/router',
+          '@koa/bodyparser',
+          'koa-json',
+          'koa-compose',
+          'svg-captcha'
+        ]
+      },
+      'configFile': 'edgeone.json'
+    },
+    middleware: [
+      'koa-json (JSON pretty print)',
+      '@koa/bodyparser (Body parsing)',
+      '@koa/router (Routing)',
+      'koa-compose (Middleware composition)'
+    ],
+    timestamp: new Date().toISOString()
+  };
+});
+
+// ==================== Middleware Setup ====================
+
+// Compose all middleware
+const middleware = compose([
+  // JSON pretty print
+  koaJson({ pretty: true, spaces: 2 }),
+  
+  // Body parser
+  bodyParser({
+    enableTypes: ['json', 'form', 'text'],
+    jsonLimit: '10mb'
+  }),
+  
+  // Router
+  router.routes(),
+  router.allowedMethods()
+]);
+
+app.use(middleware);
+
+// ==================== Error Handling ====================
+
+app.on('error', (err, ctx) => {
+  console.error('Koa server error:', err);
+});
+
+// ==================== Export ====================
+
+// EdgeOne Pages requires exporting the app as default
+export default app;
