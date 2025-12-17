@@ -243,7 +243,7 @@
     <div class="test-section">
       <h2>📦 测试 2: external_node_modules 配置</h2>
       <p style="margin-bottom: 15px; color: #666;">
-        测试使用外部 npm 包（不打包进 Function）
+        测试使用外部 npm 包（不打包进 Function）- 已合并到 Koa 应用
       </p>
       
       <div class="test-group">
@@ -280,17 +280,25 @@
       <div id="captcha-display" class="captcha-display" style="display: none;"></div>
     </div>
 
-    <!-- 测试 4: Koa Server -->
+    <!-- 测试 4: Koa 应用 -->
     <div class="test-section">
-      <h2>🌐 测试 4: Koa 完整服务器</h2>
+      <h2>🌐 测试 4: Koa 应用（合并版）</h2>
       <p style="margin-bottom: 15px; color: #666;">
-        测试 Koa 框架及多个中间件集成
+        测试 Koa 框架及多个中间件集成（路径: /koa）
       </p>
       
       <div class="test-group">
-        <h3>Koa 路由测试：</h3>
+        <h3>基础路由：</h3>
         <div class="button-group">
           <button onclick="testKoaServer()">服务器信息</button>
+          <button onclick="testKoaServer('/test-modules')">测试所有模块</button>
+          <button onclick="testKoaServer('/test-modules?module=koa')">测试 Koa 模块</button>
+        </div>
+      </div>
+      
+      <div class="test-group">
+        <h3>API 路由：</h3>
+        <div class="button-group">
           <button onclick="testKoaServer('/api/hello')">Hello 端点</button>
           <button onclick="testKoaServer('/api/echo', 'POST')">Echo 端点 (POST)</button>
           <button onclick="testKoaServer('/api/config')">配置信息</button>
@@ -304,7 +312,7 @@
     <div class="config-info">
       <h3>📝 edgeone.json 配置</h3>
       <pre style="background: white; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>{
-  "node-function": {
+  "node-functions": {
     "included_files": [
       "assets/**",
       "assets2/**"
@@ -385,14 +393,14 @@
       }
     }
 
-    // 测试 external_node_modules
+    // 测试 external_node_modules（已合并到 Koa 应用）
     async function testExternalModules(module = null) {
       const resultBox = document.getElementById('result-external-modules');
       resultBox.innerHTML = '<span class="status loading">Loading...</span> 正在测试模块...';
       resultBox.classList.add('show');
       
       try {
-        const url = module ? `/test-external-modules?module=${module}` : '/test-external-modules';
+        const url = module ? `/koa/test-modules?module=${module}` : '/koa/test-modules';
         const response = await fetch(url);
         const data = await response.json();
         
@@ -463,14 +471,14 @@
       }
     }
 
-    // 测试 Koa Server
+    // 测试 Koa 应用
     async function testKoaServer(path = '', method = 'GET') {
       const resultBox = document.getElementById('result-koa-server');
       resultBox.innerHTML = '<span class="status loading">Loading...</span> 正在请求...';
       resultBox.classList.add('show');
       
       try {
-        const url = '/test-koa-server' + path;
+        const url = '/koa' + path;
         const options = {
           method: method,
           headers: {
