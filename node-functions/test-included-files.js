@@ -12,10 +12,9 @@
  */
 
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
 
-// Note: __dirname is automatically provided by EdgeOne Pages build system
-// No need to import fileURLToPath or create __dirname manually
+// Use ES module URL-based relative paths
+// No need for __dirname, join, or fileURLToPath!
 
 export function onRequest(context) {
   const { request } = context;
@@ -28,38 +27,43 @@ export function onRequest(context) {
       ? 'assets2' 
       : 'assets';
     
-    // Try multiple possible paths using relative paths:
-    // 1. Relative to current function directory (cloud deployment with included_files)
-    // 2. Relative to project root via ../public (local development)
-    // 3. Relative to project root via ../dist (built output)
-    const possiblePaths = [
-      // Cloud deployment: included_files copies to same level as functions
-      join(__dirname, '..', assetDir, fileName),
+    // Try multiple possible paths using URL-based relative paths
+    // Note: In dev mode, functions are compiled to .edgeone/node-functions/
+    // So we need to go up 2 levels to reach project root
+    const possibleUrls = [
+      // Local dev: from .edgeone/node-functions/ to public/assets/
+      new URL(`../../public/${assetDir}/${fileName}`, import.meta.url),
       
-      // Local development: files in public/
-      join(__dirname, '..', 'public', assetDir, fileName),
+      // Cloud deployment: from node-functions/ to assets/ (included_files)
+      new URL(`../${assetDir}/${fileName}`, import.meta.url),
       
-      // Built output: files in dist/
-      join(__dirname, '..', 'dist', assetDir, fileName),
+      // Built output: from .edgeone/node-functions/ to dist/assets/
+      new URL(`../../dist/${assetDir}/${fileName}`, import.meta.url),
       
-      // Alternative: directly in parent directory
-      join(__dirname, assetDir, fileName),
+      // Alternative: from node-functions/ to public/assets/
+      new URL(`../public/${assetDir}/${fileName}`, import.meta.url),
+      
+      // Direct: same level as functions
+      new URL(`./${assetDir}/${fileName}`, import.meta.url),
     ];
     
-    let filePath = null;
+    let fileUrl = null;
     let searchedPaths = [];
     
-    // Try each possible path
-    for (const path of possiblePaths) {
-      searchedPaths.push(path);
-      if (existsSync(path)) {
-        filePath = path;
+    // Try each possible URL
+    for (const urlObj of possibleUrls) {
+      const pathStr = urlObj.pathname;
+      searchedPaths.push(pathStr);
+      
+      // Check if file exists (need to use pathname for existsSync)
+      if (existsSync(urlObj)) {
+        fileUrl = urlObj;
         break;
       }
     }
     
     // Check if file exists
-    if (!filePath) {
+    if (!fileUrl) {
       return new Response(JSON.stringify({
         success: false,
         error: 'File not found',
@@ -75,8 +79,8 @@ export function onRequest(context) {
       });
     }
     
-    // Read file content
-    const content = readFileSync(filePath, 'utf-8');
+    // Read file content (readFileSync accepts URL objects directly!)
+    const content = readFileSync(fileUrl, 'utf-8');
     
     // Determine content type
     let contentType = 'text/plain';
@@ -89,10 +93,12 @@ export function onRequest(context) {
     return new Response(JSON.stringify({
       success: true,
       fileName,
-      filePath,
+      filePath: fileUrl.pathname,
+      fileUrl: fileUrl.href,
       contentType,
       content,
-      message: '✅ Successfully read file via included_files configuration'
+      fileSize: content.length,
+      message: '✅ Successfully read file via URL-based relative paths'
     }), {
       status: 200,
       headers: {
