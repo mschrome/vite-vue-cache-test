@@ -38,8 +38,7 @@ export function onRequest(context) {
     // 尝试读取
     for (const path of possiblePaths) {
       try {
-        console.log('=====path1=====', path, existsSync(path));
-        if (true) {
+        if (existsSync(path)) {
           filePath = path;
           content = readFileSync(path, 'utf-8');
           break;
