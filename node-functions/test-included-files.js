@@ -14,6 +14,9 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
+// Note: __dirname is automatically provided by EdgeOne Pages build system
+// No need to import fileURLToPath or create __dirname manually
+
 export function onRequest(context) {
   const { request } = context;
   const url = new URL(request.url);
@@ -25,15 +28,22 @@ export function onRequest(context) {
       ? 'assets2' 
       : 'assets';
     
-    // Try multiple possible paths to support different environments:
-    // 1. Local development (files in public/)
-    // 2. EdgeOne Pages deployment (files in dist/, included via included_files)
-    // 3. Alternative deployment paths
+    // Try multiple possible paths using relative paths:
+    // 1. Relative to current function directory (cloud deployment with included_files)
+    // 2. Relative to project root via ../public (local development)
+    // 3. Relative to project root via ../dist (built output)
     const possiblePaths = [
-      join(process.cwd(), assetDir, fileName),             // EdgeOne deployed: dist/assets/**
-      join(process.cwd(), 'public', assetDir, fileName),  // Local dev: public/assets/**
-      join(process.cwd(), 'dist', assetDir, fileName),    // Built output: dist/assets/**
-      join('/tmp', assetDir, fileName),                    // Alternative location
+      // Cloud deployment: included_files copies to same level as functions
+      join(__dirname, '..', assetDir, fileName),
+      
+      // Local development: files in public/
+      join(__dirname, '..', 'public', assetDir, fileName),
+      
+      // Built output: files in dist/
+      join(__dirname, '..', 'dist', assetDir, fileName),
+      
+      // Alternative: directly in parent directory
+      join(__dirname, assetDir, fileName),
     ];
     
     let filePath = null;
