@@ -21,7 +21,7 @@ let loadErrors = [];
 
 try {
   // 读取 assets/ 目录的文件
-  assetsData.config = readFileSync('./public/assets/config.json', 'utf-8');
+  assetsData.config = readFileSync('../public/assets/config.json', 'utf-8');
   console.log('✅ 成功加载 config.json');
 } catch (error) {
   loadErrors.push({ file: 'config.json', error: error.message });
@@ -29,7 +29,7 @@ try {
 }
 
 try {
-  assetsData.data = readFileSync('./public/assets/data.md', 'utf-8');
+  assetsData.data = readFileSync('../public/assets/data.md', 'utf-8');
   console.log('✅ 成功加载 data.md');
 } catch (error) {
   loadErrors.push({ file: 'data.md', error: error.message });
@@ -38,7 +38,7 @@ try {
 
 // 读取 assets2/ 目录的文件
 try {
-  assetsData.secret = readFileSync('./public/assets2/secret.txt', 'utf-8');
+  assetsData.secret = readFileSync('../public/assets2/secret.txt', 'utf-8');
   console.log('✅ 成功加载 secret.txt');
 } catch (error) {
   loadErrors.push({ file: 'secret.txt', error: error.message });
@@ -46,7 +46,7 @@ try {
 }
 
 try {
-  assetsData.metadata = readFileSync('./public/assets2/metadata.json', 'utf-8');
+  assetsData.metadata = readFileSync('../public/assets2/metadata.json', 'utf-8');
   console.log('✅ 成功加载 metadata.json');
 } catch (error) {
   loadErrors.push({ file: 'metadata.json', error: error.message });
