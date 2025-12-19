@@ -12,8 +12,8 @@
   ],
   "node-functions": {
     "included_files": [
-      "assets/**",
-      "assets2/**"
+      "public/assets/**",
+      "public/assets2/**"
     ],
     "external_node_modules": [
       "@koa/bodyparser",
