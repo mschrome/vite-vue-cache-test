@@ -6,7 +6,9 @@
     "dev": "vite",
     "dev:functions": "edgeone pages dev",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:hot-reload": "./test-hot-reload.sh",
+    "test:quick": "curl http://localhost:8788/api/stats && echo '\n✅ Node Functions 运行正常'"
   },
   "dependencies": {
     "@koa/bodyparser": "^5.1.1",
