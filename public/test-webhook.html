@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EdgeOne Pages Webhook 测试</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    select, input, textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.3s;
+      font-family: inherit;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    textarea {
+      min-height: 200px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      resize: vertical;
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 14px 30px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .result {
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .result.success {
+      background: #d4edda;
+      border: 2px solid #28a745;
+      color: #155724;
+    }
+
+    .result.error {
+      background: #f8d7da;
+      border: 2px solid #dc3545;
+      color: #721c24;
+    }
+
+    .result-title {
+      font-weight: 700;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+
+    .result-content {
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .event-templates {
+      margin-top: 15px;
+    }
+
+    .template-btn {
+      display: inline-block;
+      padding: 8px 16px;
+      margin: 5px 5px 5px 0;
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .template-btn:hover {
+      background: #e9ecef;
+      border-color: #adb5bd;
+    }
+
+    .info-box {
+      background: #e7f3ff;
+      border-left: 4px solid #2196F3;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .info-box p {
+      margin: 5px 0;
+      color: #1976D2;
+      font-size: 14px;
+    }
+
+    .info-box code {
+      background: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🔔 EdgeOne Pages Webhook 测试</h1>
+      <p class="subtitle">测试 webhook 端点接收和处理能力</p>
+
+      <div class="info-box">
+        <p><strong>📍 Webhook 端点:</strong> <code>/webhooks/edgeone</code></p>
+        <p><strong>📝 支持的方法:</strong> POST</p>
+        <p><strong>🔒 签名验证:</strong> 可选（需配置 WEBHOOK_SECRET 环境变量）</p>
+      </div>
+
+      <div class="form-group">
+        <label for="eventType">事件类型</label>
+        <select id="eventType">
+          <optgroup label="部署事件">
+            <option value="deployment.created">deployment.created - 部署创建</option>
+            <option value="deployment.succeeded" selected>deployment.succeeded - 部署成功</option>
+            <option value="deployment.promoted">deployment.promoted - 部署提升</option>
+            <option value="deployment.error">deployment.error - 部署失败</option>
+            <option value="deployment.cancelled">deployment.cancelled - 部署取消</option>
+          </optgroup>
+          <optgroup label="项目事件">
+            <option value="project.created">project.created - 项目创建</option>
+            <option value="project.removed">project.removed - 项目删除</option>
+            <option value="project.renamed">project.renamed - 项目重命名</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="event-templates">
+        <label>快速填充测试数据:</label>
+        <button class="template-btn" onclick="fillDeploymentTemplate()">📦 部署事件模板</button>
+        <button class="template-btn" onclick="fillProjectTemplate()">📁 项目事件模板</button>
+        <button class="template-btn" onclick="clearPayload()">🗑️ 清空</button>
+      </div>
+
+      <div class="form-group">
+        <label for="payload">Webhook Payload (JSON)</label>
+        <textarea id="payload" placeholder='输入 JSON 格式的 webhook payload...'></textarea>
+      </div>
+
+      <button class="btn" onclick="sendWebhook()">
+        🚀 发送 Webhook 请求
+      </button>
+
+      <div id="result" class="result"></div>
+    </div>
+  </div>
+
+  <script>
+    // 默认加载部署成功事件模板
+    window.onload = () => {
+      fillDeploymentTemplate();
+    };
+
+    function fillDeploymentTemplate() {
+      const eventType = document.getElementById('eventType').value;
+      let template;
+
+      if (eventType.startsWith('deployment.')) {
+        template = {
+          type: eventType,
+          createdAt: new Date().toISOString(),
+          team: {
+            id: "team_test123",
+            name: "Test Team",
+            slug: "test-team"
+          },
+          project: {
+            id: "prj_test456",
+            name: "my-awesome-project"
+          },
+          deployment: {
+            id: "dpl_test789",
+            url: "my-awesome-project-abc123.edgeone-pages.com",
+            name: "my-awesome-project",
+            meta: {
+              githubCommitRef: "main",
+              githubCommitSha: "abc123def456",
+              githubCommitMessage: "feat: add new feature",
+              githubCommitAuthorName: "Developer",
+              githubRepoOwner: "myorg",
+              githubRepo: "my-awesome-project"
+            },
+            buildDuration: 45123,
+            creator: {
+              uid: "user_123",
+              username: "developer"
+            }
+          }
+        };
+
+        if (eventType === 'deployment.error') {
+          template.deployment.errorMessage = "Build failed: Module not found";
+          template.deployment.errorCode = "BUILD_FAILED";
+        }
+      }
+
+      document.getElementById('payload').value = JSON.stringify(template, null, 2);
+    }
+
+    function fillProjectTemplate() {
+      const eventType = document.getElementById('eventType').value;
+      let template;
+
+      if (eventType === 'project.created') {
+        template = {
+          type: eventType,
+          createdAt: new Date().toISOString(),
+          team: {
+            id: "team_test123",
+            name: "Test Team"
+          },
+          project: {
+            id: "prj_new789",
+            name: "new-project",
+            framework: "vue",
+            createdAt: new Date().toISOString()
+          }
+        };
+      } else if (eventType === 'project.removed') {
+        template = {
+          type: eventType,
+          createdAt: new Date().toISOString(),
+          team: {
+            id: "team_test123",
+            name: "Test Team"
+          },
+          project: {
+            id: "prj_old789",
+            name: "old-project"
+          }
+        };
+      } else if (eventType === 'project.renamed') {
+        template = {
+          type: eventType,
+          createdAt: new Date().toISOString(),
+          team: {
+            id: "team_test123",
+            name: "Test Team"
+          },
+          project: {
+            id: "prj_test789",
+            name: "new-project-name",
+            oldName: "old-project-name"
+          }
+        };
+      }
+
+      document.getElementById('payload').value = JSON.stringify(template, null, 2);
+    }
+
+    function clearPayload() {
+      document.getElementById('payload').value = '';
+    }
+
+    async function sendWebhook() {
+      const eventType = document.getElementById('eventType').value;
+      const payloadText = document.getElementById('payload').value;
+      const resultDiv = document.getElementById('result');
+      const btn = event.target;
+
+      // 验证 JSON 格式
+      let payload;
+      try {
+        payload = JSON.parse(payloadText);
+      } catch (e) {
+        showResult(false, '❌ JSON 格式错误: ' + e.message);
+        return;
+      }
+
+      // 确保 payload 包含事件类型
+      if (!payload.type) {
+        payload.type = eventType;
+      }
+
+      btn.disabled = true;
+      btn.textContent = '⏳ 发送中...';
+      resultDiv.style.display = 'none';
+
+      try {
+        const response = await fetch('/webhooks/edgeone', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          showResult(true, `✅ Webhook 处理成功!\n\n响应数据:\n${JSON.stringify(result, null, 2)}`);
+        } else {
+          showResult(false, `❌ Webhook 处理失败 (${response.status})\n\n错误信息:\n${JSON.stringify(result, null, 2)}`);
+        }
+      } catch (error) {
+        showResult(false, `❌ 请求失败: ${error.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '🚀 发送 Webhook 请求';
+      }
+    }
+
+    function showResult(success, message) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.className = success ? 'result success' : 'result error';
+      resultDiv.innerHTML = `
+        <div class="result-title">${success ? '✅ 成功' : '❌ 失败'}</div>
+        <div class="result-content">${message}</div>
+      `;
+      resultDiv.style.display = 'block';
+    }
+
+    // 事件类型改变时自动填充对应模板
+    document.getElementById('eventType').addEventListener('change', function() {
+      const eventType = this.value;
+      if (eventType.startsWith('deployment.')) {
+        fillDeploymentTemplate();
+      } else if (eventType.startsWith('project.')) {
+        fillProjectTemplate();
+      }
+    });
+  </script>
+</body>
+</html>
+
