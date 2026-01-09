@@ -2,10 +2,25 @@
 
 这是一个用于接收和处理 EdgeOne Pages webhook 事件的 Node Function。
 
+## ⚠️ 当前版本：调试模式
+
+**当前版本已优化用于调试：**
+- ✅ **详细日志输出**：记录所有请求细节
+- ✅ **签名验证已放宽**：即使签名无效也会继续处理（仅警告）
+- ✅ **支持 GET 请求**：用于健康检查
+- ✅ **宽松的错误处理**：即使缺少字段也会尝试处理
+- ✅ **完整的调试信息**：响应中包含 debug 字段
+
+**生产环境部署前记得：**
+- 🔒 启用严格的签名验证
+- 🚫 移除 GET 请求支持
+- 📝 简化日志输出（避免记录敏感信息）
+
 ## 📍 API 端点
 
 ```
-POST /webhooks/edgeone
+GET  /webhooks/edgeone  (健康检查)
+POST /webhooks/edgeone  (接收 webhook)
 ```
 
 ## 🎯 支持的事件类型
@@ -101,6 +116,51 @@ x-edgeone-signature: <hmac-sha256-signature>
 
 ## 🧪 测试 Webhook
 
+### 🚀 快速调试（推荐）
+
+**步骤 1: 启动本地服务器**
+```bash
+npm run dev:functions
+```
+
+**步骤 2: 使用测试脚本**
+```bash
+# 快速测试（最简单）
+./test-webhook-simple.sh
+
+# 完整测试（所有场景）
+./test-webhook.sh local
+```
+
+**步骤 3: 查看日志**
+- 所有请求细节会打印在 Node Functions 服务器的控制台
+- 响应中包含 `debug` 字段，显示处理信息
+
+### 📊 调试检查清单
+
+如果遇到 400/500 错误，按顺序检查：
+
+1. **检查请求方法**
+   ```bash
+   # 先用 GET 测试连通性
+   curl http://localhost:8788/webhooks/edgeone
+   ```
+
+2. **检查 JSON 格式**
+   ```bash
+   # 最简单的 POST 请求
+   curl -X POST http://localhost:8788/webhooks/edgeone \
+     -H "Content-Type: application/json" \
+     -d '{"type":"test"}'
+   ```
+
+3. **查看服务器日志**
+   - 日志会显示接收到的完整请求信息
+   - 包括 headers、body、解析结果等
+
+4. **检查 Content-Type**
+   - 必须设置 `Content-Type: application/json`
+
 ### 方法 1: 使用测试页面
 
 访问项目内置的测试页面：
@@ -130,14 +190,14 @@ curl -X POST https://your-domain.com/webhooks/edgeone \
   }'
 ```
 
-### 方法 3: 本地测试
+### 方法 3: 测试生产环境
 
 ```bash
-# 1. 启动 Node Functions 开发服务器
-npm run dev:functions
+# 修改脚本中的域名后运行
+./test-webhook.sh production
 
-# 2. 发送测试请求
-curl -X POST http://localhost:8788/webhooks/edgeone \
+# 或直接用 curl
+curl -X POST https://your-domain.com/webhooks/edgeone \
   -H "Content-Type: application/json" \
   -d '{"type":"deployment.succeeded","deployment":{"url":"test.com"}}'
 ```
