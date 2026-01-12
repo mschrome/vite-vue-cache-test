@@ -6,39 +6,40 @@
  * 
  * 支持的事件类型:
  * - deployment.created: 部署创建时触发
- * - deployment.succeeded: 部署成功时触发
- * - deployment.promoted: 部署被提升为生产环境时触发
- * - deployment.error: 部署失败时触发
- * - deployment.cancelled: 部署被取消时触发
  * - project.created: 项目创建时触发
- * - project.removed: 项目删除时触发
- * - project.renamed: 项目重命名时触发
+ * - domain.added: 域名添加时触发
+ * 
+ * 鉴权方式:
+ * - Headers 中的 authorization: Bearer <token>
+ * - token 长度: 8-128 位
  */
-
-import crypto from 'crypto';
 
 /**
- * 验证 webhook 签名
- * @param {string} payload - 请求体（字符串）
- * @param {string} signature - x-edgeone-signature 头部值
- * @param {string} secret - webhook secret（从环境变量获取）
- * @returns {boolean} 签名是否有效
+ * 验证 Bearer Token
+ * @param {string} authHeader - authorization 头部值 (格式: "Bearer <token>")
+ * @param {string} expectedToken - 预期的 token（从环境变量获取）
+ * @returns {boolean} token 是否有效
  */
-function verifySignature(payload, signature, secret) {
-  if (!signature || !secret) {
+function verifyBearerToken(authHeader, expectedToken) {
+  if (!authHeader || !expectedToken) {
     return false;
   }
 
-  // 使用 HMAC-SHA256 计算签名
-  const hmac = crypto.createHmac('sha256', secret);
-  hmac.update(payload);
-  const expectedSignature = hmac.digest('hex');
+  // 提取 Bearer token
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    return false;
+  }
 
-  // 使用时间安全的比较方法
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  );
+  const token = parts[1];
+  
+  // 验证 token 长度 (8-128 位)
+  if (token.length < 8 || token.length > 128) {
+    return false;
+  }
+
+  // 简单的字符串比较
+  return token === expectedToken;
 }
 
 /**
@@ -53,89 +54,64 @@ function handleWebhookEvent(eventType, payload) {
   
   const handlers = {
     'deployment.created': (data) => {
-      const url = data.deployment?.url || data.url || 'N/A';
-      console.log(`🚀 New deployment created: ${url}`);
+      // EdgeOne Pages deployment 字段:
+      // appId, projectId, deploymentId, projectName, repoBranch, gitCommit, env, timestamp
+      console.log(`🚀 Deployment created for project: ${data.projectName || 'N/A'}`);
+      console.log(`   - App ID: ${data.appId || 'N/A'}`);
+      console.log(`   - Project ID: ${data.projectId || 'N/A'}`);
+      console.log(`   - Deployment ID: ${data.deploymentId || 'N/A'}`);
+      console.log(`   - Branch: ${data.repoBranch || 'N/A'}`);
+      console.log(`   - Commit: ${data.gitCommit || 'N/A'}`);
+      console.log(`   - Environment: ${data.env || 'N/A'}`);
+      
       return {
         message: 'Deployment created event processed',
-        deployment: url,
-        data: data.deployment || {}
-      };
-    },
-    
-    'deployment.succeeded': (data) => {
-      const url = data.deployment?.url || data.url || 'N/A';
-      const duration = data.deployment?.buildDuration || data.buildDuration || 'N/A';
-      console.log(`✅ Deployment succeeded: ${url} (duration: ${duration}ms)`);
-      return {
-        message: 'Deployment succeeded event processed',
-        deployment: url,
-        duration: duration,
-        data: data.deployment || {}
-      };
-    },
-    
-    'deployment.promoted': (data) => {
-      const url = data.deployment?.url || data.url || 'N/A';
-      console.log(`🎉 Deployment promoted: ${url}`);
-      return {
-        message: 'Deployment promoted event processed',
-        deployment: url,
-        data: data.deployment || {}
-      };
-    },
-    
-    'deployment.error': (data) => {
-      const url = data.deployment?.url || data.url || 'N/A';
-      const error = data.deployment?.errorMessage || data.errorMessage || 'N/A';
-      console.error(`❌ Deployment failed: ${url}`);
-      console.error(`Error message: ${error}`);
-      return {
-        message: 'Deployment error event processed',
-        deployment: url,
-        error: error,
-        data: data.deployment || {}
-      };
-    },
-    
-    'deployment.cancelled': (data) => {
-      const url = data.deployment?.url || data.url || 'N/A';
-      console.log(`🚫 Deployment cancelled: ${url}`);
-      return {
-        message: 'Deployment cancelled event processed',
-        deployment: url,
-        data: data.deployment || {}
+        appId: data.appId,
+        projectId: data.projectId,
+        deploymentId: data.deploymentId,
+        projectName: data.projectName,
+        repoBranch: data.repoBranch,
+        gitCommit: data.gitCommit,
+        env: data.env,
+        timestamp: data.timestamp
       };
     },
     
     'project.created': (data) => {
-      const name = data.project?.name || data.name || 'N/A';
-      console.log(`📁 New project created: ${name}`);
+      // EdgeOne Pages project 字段:
+      // appId, projectId, projectName, repoUrl, timestamp
+      console.log(`📁 New project created: ${data.projectName || 'N/A'}`);
+      console.log(`   - App ID: ${data.appId || 'N/A'}`);
+      console.log(`   - Project ID: ${data.projectId || 'N/A'}`);
+      console.log(`   - Repo URL: ${data.repoUrl || 'N/A'}`);
+      
       return {
         message: 'Project created event processed',
-        project: name,
-        data: data.project || {}
+        appId: data.appId,
+        projectId: data.projectId,
+        projectName: data.projectName,
+        repoUrl: data.repoUrl,
+        timestamp: data.timestamp
       };
     },
     
-    'project.removed': (data) => {
-      const name = data.project?.name || data.name || 'N/A';
-      console.log(`🗑️ Project removed: ${name}`);
+    'domain.added': (data) => {
+      // EdgeOne Pages domain 字段:
+      // appId, projectId, domainName, domainId, projectName, timestamp
+      console.log(`🌐 Domain added: ${data.domainName || 'N/A'}`);
+      console.log(`   - Project: ${data.projectName || 'N/A'}`);
+      console.log(`   - Domain ID: ${data.domainId || 'N/A'}`);
+      console.log(`   - App ID: ${data.appId || 'N/A'}`);
+      console.log(`   - Project ID: ${data.projectId || 'N/A'}`);
+      
       return {
-        message: 'Project removed event processed',
-        project: name,
-        data: data.project || {}
-      };
-    },
-    
-    'project.renamed': (data) => {
-      const oldName = data.project?.oldName || data.oldName || 'N/A';
-      const newName = data.project?.name || data.name || 'N/A';
-      console.log(`✏️ Project renamed: ${oldName} → ${newName}`);
-      return {
-        message: 'Project renamed event processed',
-        oldName: oldName,
-        newName: newName,
-        data: data.project || {}
+        message: 'Domain added event processed',
+        appId: data.appId,
+        projectId: data.projectId,
+        domainName: data.domainName,
+        domainId: data.domainId,
+        projectName: data.projectName,
+        timestamp: data.timestamp
       };
     }
   };
@@ -249,27 +225,33 @@ export async function onRequest(context) {
       );
     }
 
-    // 【暂时禁用签名验证】用于调试
-    const signature = request.headers.get('x-edgeone-signature');
-    const webhookSecret = env.WEBHOOK_SECRET;
+    // 【Bearer Token 鉴权】用于验证 EdgeOne Pages webhook
+    const authHeader = request.headers.get('authorization');
+    const webhookToken = env.WEBHOOK_TOKEN || env.WEBHOOK_SECRET; // 支持两种环境变量名
     
-    if (webhookSecret && signature) {
-      console.log('🔒 Signature verification is configured');
-      console.log('Signature header:', signature ? 'present' : 'missing');
+    if (webhookToken) {
+      console.log('🔒 Token verification is configured');
+      console.log('Authorization header:', authHeader ? 'present' : 'missing');
       
-      // 暂时只记录，不阻止请求
-      const isValid = verifySignature(bodyText, signature, webhookSecret);
-      if (!isValid) {
-        console.warn('⚠️ Warning: Invalid signature (but allowing request for debugging)');
+      if (!authHeader) {
+        console.warn('⚠️ Warning: No authorization header (but allowing request for debugging)');
       } else {
-        console.log('✅ Signature verified');
+        const isValid = verifyBearerToken(authHeader, webhookToken);
+        if (!isValid) {
+          console.warn('⚠️ Warning: Invalid Bearer token (but allowing request for debugging)');
+          console.warn('   Expected token length: 8-128 characters');
+          console.warn('   Received header format:', authHeader.substring(0, 30) + '...');
+        } else {
+          console.log('✅ Bearer token verified successfully');
+        }
       }
     } else {
-      console.log('ℹ️ Signature verification skipped (no secret configured or no signature header)');
+      console.log('ℹ️ Token verification skipped (no WEBHOOK_TOKEN configured)');
+      console.log('   Set WEBHOOK_TOKEN environment variable to enable authentication');
     }
 
-    // 提取事件类型（更宽松的处理）
-    const eventType = payload.type || payload.event || payload.eventType || 'unknown';
+    // 提取事件类型（EdgeOne Pages 使用 eventType 字段）
+    const eventType = payload.eventType || payload.type || payload.event || 'unknown';
     console.log('📌 Event type:', eventType);
     
     // 【放宽限制】即使没有事件类型也继续处理
@@ -284,12 +266,12 @@ export async function onRequest(context) {
 
     // 记录完整的 webhook 信息
     console.log('📊 Webhook summary:', {
-      type: eventType,
-      timestamp: new Date().toISOString(),
+      eventType: eventType,
+      timestamp: payload.timestamp || new Date().toISOString(),
       payloadSize: JSON.stringify(payload).length,
-      hasDeployment: !!payload.deployment,
-      hasProject: !!payload.project,
-      hasTeam: !!payload.team
+      appId: payload.appId,
+      projectId: payload.projectId,
+      projectName: payload.projectName
     });
 
     // 返回成功响应
@@ -301,7 +283,8 @@ export async function onRequest(context) {
       debug: {
         bodyLength: bodyText.length,
         payloadKeys: Object.keys(payload),
-        hasSignature: !!signature
+        hasAuthHeader: !!authHeader,
+        authMethod: 'Bearer Token'
       }
     };
     

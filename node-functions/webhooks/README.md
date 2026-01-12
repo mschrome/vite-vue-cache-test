@@ -28,89 +28,86 @@ POST /webhooks/edgeone  (接收 webhook)
 ### 部署事件 (Deployment Events)
 
 - `deployment.created` - 部署创建时触发
-- `deployment.succeeded` - 部署成功时触发
-- `deployment.promoted` - 部署被提升为生产环境时触发
-- `deployment.error` - 部署失败时触发
-- `deployment.cancelled` - 部署被取消时触发
 
 ### 项目事件 (Project Events)
 
 - `project.created` - 项目创建时触发
-- `project.removed` - 项目删除时触发
-- `project.renamed` - 项目重命名时触发
+
+### 域名事件 (Domain Events)
+
+- `domain.added` - 域名添加时触发
 
 ## 🔒 安全配置
 
-### 启用签名验证
+### 启用 Bearer Token 鉴权
 
-为了确保 webhook 请求的安全性，建议配置签名验证：
+EdgeOne Pages webhook 使用 Bearer Token 进行身份验证：
 
-1. **在 EdgeOne Pages 控制台生成 Webhook Secret**
+1. **在 EdgeOne Pages 控制台获取 Webhook Token**
+   - Token 长度：8-128 位字符串
+
 2. **在项目中设置环境变量：**
 
 ```bash
-WEBHOOK_SECRET=your_webhook_secret_here
+WEBHOOK_TOKEN=your_webhook_token_here
 ```
 
-3. **EdgeOne Pages 会在请求头中发送签名：**
+或使用：
+
+```bash
+WEBHOOK_SECRET=your_webhook_token_here  # 也支持这个变量名
+```
+
+3. **EdgeOne Pages 会在请求头中发送 Bearer Token：**
 
 ```
-x-edgeone-signature: <hmac-sha256-signature>
+Authorization: Bearer <your-token>
 ```
 
-函数会自动验证签名的有效性。如果未配置 `WEBHOOK_SECRET`，则跳过签名验证（仅用于测试环境）。
+函数会自动验证 token 的有效性。如果未配置 `WEBHOOK_TOKEN`，则跳过验证（仅用于测试环境）。
 
 ## 📦 Webhook Payload 示例
 
-### 部署成功事件
+### 部署创建事件 (deployment.created)
 
 ```json
 {
-  "type": "deployment.succeeded",
-  "createdAt": "2025-01-08T10:30:00.000Z",
-  "team": {
-    "id": "team_abc123",
-    "name": "My Team",
-    "slug": "my-team"
-  },
-  "project": {
-    "id": "prj_xyz789",
-    "name": "my-project"
-  },
-  "deployment": {
-    "id": "dpl_def456",
-    "url": "my-project-abc123.edgeone-pages.com",
-    "name": "my-project",
-    "meta": {
-      "githubCommitRef": "main",
-      "githubCommitSha": "abc123def456",
-      "githubCommitMessage": "feat: add new feature",
-      "githubCommitAuthorName": "Developer"
-    },
-    "buildDuration": 45000,
-    "creator": {
-      "uid": "user_123",
-      "username": "developer"
-    }
-  }
+  "eventType": "deployment.created",
+  "appId": "1234567890",
+  "projectId": "prj_abc123xyz456",
+  "deploymentId": "dpl_deployment123",
+  "projectName": "my-awesome-project",
+  "repoBranch": "main",
+  "gitCommit": "abc123def456789",
+  "env": "production",
+  "timestamp": "2025-01-08T10:30:00.000Z"
 }
 ```
 
-### 项目重命名事件
+### 项目创建事件 (project.created)
 
 ```json
 {
-  "type": "project.renamed",
-  "createdAt": "2025-01-08T10:30:00.000Z",
-  "team": {
-    "id": "team_abc123",
-    "name": "My Team"
-  },
-  "project": {
-    "id": "prj_xyz789",
-    "name": "new-project-name",
-    "oldName": "old-project-name"
-  }
+  "eventType": "project.created",
+  "appId": "1234567890",
+  "projectId": "prj_new123xyz456",
+  "projectName": "new-awesome-project",
+  "repoUrl": "https://github.com/myorg/my-awesome-project",
+  "timestamp": "2025-01-08T10:30:00.000Z"
+}
+```
+
+### 域名添加事件 (domain.added)
+
+```json
+{
+  "eventType": "domain.added",
+  "appId": "1234567890",
+  "projectId": "prj_abc123xyz456",
+  "domainName": "www.example.com",
+  "domainId": "domain_123456",
+  "projectName": "my-awesome-project",
+  "timestamp": "2025-01-08T10:30:00.000Z"
 }
 ```
 
@@ -146,12 +143,13 @@ npm run dev:functions
    curl http://localhost:8788/webhooks/edgeone
    ```
 
-2. **检查 JSON 格式**
+2. **检查 JSON 格式和 Token**
    ```bash
    # 最简单的 POST 请求
    curl -X POST http://localhost:8788/webhooks/edgeone \
      -H "Content-Type: application/json" \
-     -d '{"type":"test"}'
+     -H "Authorization: Bearer test-token-12345678" \
+     -d '{"eventType":"deployment.created","appId":"123","projectId":"prj_test"}'
    ```
 
 3. **查看服务器日志**
@@ -177,29 +175,34 @@ https://your-domain.com/test-webhook.html
 ### 方法 2: 使用 cURL
 
 ```bash
-# 部署成功事件
+# 部署创建事件
 curl -X POST https://your-domain.com/webhooks/edgeone \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_WEBHOOK_TOKEN" \
   -d '{
-    "type": "deployment.succeeded",
-    "createdAt": "2025-01-08T10:30:00.000Z",
-    "deployment": {
-      "url": "my-project-abc123.edgeone-pages.com",
-      "buildDuration": 45000
-    }
+    "eventType": "deployment.created",
+    "appId": "1234567890",
+    "projectId": "prj_abc123xyz456",
+    "deploymentId": "dpl_deployment123",
+    "projectName": "my-awesome-project",
+    "repoBranch": "main",
+    "gitCommit": "abc123def456789",
+    "env": "production",
+    "timestamp": "2025-01-08T10:30:00.000Z"
   }'
 ```
 
 ### 方法 3: 测试生产环境
 
 ```bash
-# 修改脚本中的域名后运行
+# 修改脚本中的域名和 token 后运行
 ./test-webhook.sh production
 
 # 或直接用 curl
 curl -X POST https://your-domain.com/webhooks/edgeone \
   -H "Content-Type: application/json" \
-  -d '{"type":"deployment.succeeded","deployment":{"url":"test.com"}}'
+  -H "Authorization: Bearer YOUR_WEBHOOK_TOKEN" \
+  -d '{"eventType":"deployment.created","appId":"123","projectId":"prj_test","projectName":"test"}'
 ```
 
 ## 📊 响应格式
@@ -209,13 +212,25 @@ curl -X POST https://your-domain.com/webhooks/edgeone \
 ```json
 {
   "success": true,
-  "eventType": "deployment.succeeded",
+  "eventType": "deployment.created",
   "result": {
-    "message": "Deployment succeeded event processed",
-    "deployment": "my-project-abc123.edgeone-pages.com",
-    "duration": 45000
+    "message": "Deployment created event processed",
+    "appId": "1234567890",
+    "projectId": "prj_abc123xyz456",
+    "deploymentId": "dpl_deployment123",
+    "projectName": "my-awesome-project",
+    "repoBranch": "main",
+    "gitCommit": "abc123def456789",
+    "env": "production",
+    "timestamp": "2025-01-08T10:30:00.000Z"
   },
-  "timestamp": "2025-01-08T10:30:00.000Z"
+  "timestamp": "2025-01-08T10:30:05.000Z",
+  "debug": {
+    "bodyLength": 234,
+    "payloadKeys": ["eventType", "appId", "projectId", "deploymentId"],
+    "hasAuthHeader": true,
+    "authMethod": "Bearer Token"
+  }
 }
 ```
 
@@ -234,19 +249,31 @@ curl -X POST https://your-domain.com/webhooks/edgeone \
 在 `edgeone.js` 文件的 `handleWebhookEvent` 函数中，你可以为每种事件类型添加自定义处理逻辑：
 
 ```javascript
-'deployment.succeeded': (data) => {
+'deployment.created': (data) => {
   // 添加你的自定义逻辑
-  console.log(`✅ Deployment succeeded: ${data.deployment?.url}`);
+  console.log(`🚀 Deployment created for project: ${data.projectName}`);
+  console.log(`   - Branch: ${data.repoBranch}`);
+  console.log(`   - Commit: ${data.gitCommit}`);
   
   // 例如：发送通知到 Slack/Discord
-  // await sendSlackNotification(data);
+  // await sendSlackNotification({
+  //   text: `New deployment for ${data.projectName} on ${data.repoBranch}`
+  // });
   
   // 例如：更新数据库
-  // await updateDeploymentStatus(data);
+  // await db.deployments.create({
+  //   deploymentId: data.deploymentId,
+  //   projectId: data.projectId,
+  //   branch: data.repoBranch,
+  //   commit: data.gitCommit
+  // });
   
   return {
-    message: 'Deployment succeeded event processed',
-    deployment: data.deployment?.url
+    message: 'Deployment created event processed',
+    appId: data.appId,
+    projectId: data.projectId,
+    deploymentId: data.deploymentId,
+    projectName: data.projectName
   };
 }
 ```
@@ -254,7 +281,8 @@ curl -X POST https://your-domain.com/webhooks/edgeone \
 ## 🚀 部署到生产环境
 
 1. **配置环境变量：**
-   - 在 EdgeOne Pages 控制台设置 `WEBHOOK_SECRET`
+   - 在 EdgeOne Pages 控制台设置 `WEBHOOK_TOKEN`
+   - Token 长度：8-128 位字符串
 
 2. **部署项目：**
    ```bash
@@ -265,8 +293,12 @@ curl -X POST https://your-domain.com/webhooks/edgeone \
 
 3. **在 EdgeOne Pages 控制台配置 Webhook：**
    - Webhook URL: `https://your-domain.com/webhooks/edgeone`
-   - 选择需要监听的事件类型
-   - 保存配置并记录生成的 Secret
+   - 回调地址填写上面的 URL
+   - 配置秘钥令牌（8-128 位），平台会在 `Authorization: Bearer <token>` 头部发送
+   - 选择需要监听的事件类型：
+     - deployment.created
+     - project.created
+     - domain.added
 
 ## 📝 日志和调试
 
@@ -286,26 +318,35 @@ curl -X POST https://your-domain.com/webhooks/edgeone \
 
 ## 💡 常见问题
 
-### Q: 为什么我的 webhook 返回 401 错误？
+### Q: 为什么我的 webhook 返回警告但仍然处理成功？
 
-A: 检查是否正确配置了 `WEBHOOK_SECRET` 环境变量，以及 EdgeOne Pages 发送的签名是否正确。
+A: 当前版本处于调试模式，即使 Bearer token 验证失败也会继续处理请求（仅记录警告）。这是为了方便调试。
 
-### Q: 如何在本地测试签名验证？
+### Q: 如何在本地测试 Bearer Token 验证？
 
-A: 你需要手动计算 HMAC-SHA256 签名并添加到请求头中：
+A: 在请求头中添加 Authorization header：
 
-```javascript
-const crypto = require('crypto');
-const payload = JSON.stringify({type: "deployment.succeeded"});
-const secret = "your_secret";
-const signature = crypto.createHmac('sha256', secret).update(payload).digest('hex');
-
-// 然后在请求头中添加: x-edgeone-signature: <signature>
+```bash
+curl -X POST http://localhost:8788/webhooks/edgeone \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer your-test-token-here" \
+  -d '{"eventType":"deployment.created","appId":"123","projectId":"prj_test"}'
 ```
 
 ### Q: 支持其他事件类型吗？
 
-A: 可以！只需在 `handleWebhookEvent` 函数中添加新的事件处理器即可。
+A: 可以！只需在 `handleWebhookEvent` 函数中添加新的事件处理器即可。当前支持：
+- `deployment.created`
+- `project.created`
+- `domain.added`
+
+### Q: eventType 字段是必须的吗？
+
+A: 函数会尝试从 `eventType`、`type` 或 `event` 字段中提取事件类型。如果都没有，会使用 "unknown" 并继续处理。
+
+### Q: 我需要配置 WEBHOOK_TOKEN 吗？
+
+A: 调试阶段可以不配置，函数会跳过验证。生产环境强烈建议配置以确保安全。
 
 ## 📄 许可证
 

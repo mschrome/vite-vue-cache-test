@@ -196,16 +196,13 @@
         <label for="eventType">事件类型</label>
         <select id="eventType">
           <optgroup label="部署事件">
-            <option value="deployment.created">deployment.created - 部署创建</option>
-            <option value="deployment.succeeded" selected>deployment.succeeded - 部署成功</option>
-            <option value="deployment.promoted">deployment.promoted - 部署提升</option>
-            <option value="deployment.error">deployment.error - 部署失败</option>
-            <option value="deployment.cancelled">deployment.cancelled - 部署取消</option>
+            <option value="deployment.created" selected>deployment.created - 部署创建</option>
           </optgroup>
           <optgroup label="项目事件">
             <option value="project.created">project.created - 项目创建</option>
-            <option value="project.removed">project.removed - 项目删除</option>
-            <option value="project.renamed">project.renamed - 项目重命名</option>
+          </optgroup>
+          <optgroup label="域名事件">
+            <option value="domain.added">domain.added - 域名添加</option>
           </optgroup>
         </select>
       </div>
@@ -240,43 +237,19 @@
       const eventType = document.getElementById('eventType').value;
       let template;
 
-      if (eventType.startsWith('deployment.')) {
+      if (eventType === 'deployment.created') {
+        // EdgeOne Pages deployment.created 事件结构
         template = {
-          type: eventType,
-          createdAt: new Date().toISOString(),
-          team: {
-            id: "team_test123",
-            name: "Test Team",
-            slug: "test-team"
-          },
-          project: {
-            id: "prj_test456",
-            name: "my-awesome-project"
-          },
-          deployment: {
-            id: "dpl_test789",
-            url: "my-awesome-project-abc123.edgeone-pages.com",
-            name: "my-awesome-project",
-            meta: {
-              githubCommitRef: "main",
-              githubCommitSha: "abc123def456",
-              githubCommitMessage: "feat: add new feature",
-              githubCommitAuthorName: "Developer",
-              githubRepoOwner: "myorg",
-              githubRepo: "my-awesome-project"
-            },
-            buildDuration: 45123,
-            creator: {
-              uid: "user_123",
-              username: "developer"
-            }
-          }
+          eventType: 'deployment.created',
+          appId: '1234567890',
+          projectId: 'prj_abc123xyz456',
+          deploymentId: 'dpl_deployment123',
+          projectName: 'my-awesome-project',
+          repoBranch: 'main',
+          gitCommit: 'abc123def456789',
+          env: 'production',
+          timestamp: new Date().toISOString()
         };
-
-        if (eventType === 'deployment.error') {
-          template.deployment.errorMessage = "Build failed: Module not found";
-          template.deployment.errorCode = "BUILD_FAILED";
-        }
       }
 
       document.getElementById('payload').value = JSON.stringify(template, null, 2);
@@ -287,46 +260,25 @@
       let template;
 
       if (eventType === 'project.created') {
+        // EdgeOne Pages project.created 事件结构
         template = {
-          type: eventType,
-          createdAt: new Date().toISOString(),
-          team: {
-            id: "team_test123",
-            name: "Test Team"
-          },
-          project: {
-            id: "prj_new789",
-            name: "new-project",
-            framework: "vue",
-            createdAt: new Date().toISOString()
-          }
+          eventType: 'project.created',
+          appId: '1234567890',
+          projectId: 'prj_new123xyz456',
+          projectName: 'new-awesome-project',
+          repoUrl: 'https://github.com/myorg/my-awesome-project',
+          timestamp: new Date().toISOString()
         };
-      } else if (eventType === 'project.removed') {
+      } else if (eventType === 'domain.added') {
+        // EdgeOne Pages domain.added 事件结构
         template = {
-          type: eventType,
-          createdAt: new Date().toISOString(),
-          team: {
-            id: "team_test123",
-            name: "Test Team"
-          },
-          project: {
-            id: "prj_old789",
-            name: "old-project"
-          }
-        };
-      } else if (eventType === 'project.renamed') {
-        template = {
-          type: eventType,
-          createdAt: new Date().toISOString(),
-          team: {
-            id: "team_test123",
-            name: "Test Team"
-          },
-          project: {
-            id: "prj_test789",
-            name: "new-project-name",
-            oldName: "old-project-name"
-          }
+          eventType: 'domain.added',
+          appId: '1234567890',
+          projectId: 'prj_abc123xyz456',
+          domainName: 'www.example.com',
+          domainId: 'domain_123456',
+          projectName: 'my-awesome-project',
+          timestamp: new Date().toISOString()
         };
       }
 
@@ -353,19 +305,23 @@
       }
 
       // 确保 payload 包含事件类型
-      if (!payload.type) {
-        payload.type = eventType;
+      if (!payload.eventType) {
+        payload.eventType = eventType;
       }
 
       btn.disabled = true;
       btn.textContent = '⏳ 发送中...';
       resultDiv.style.display = 'none';
 
+      // 可选：从环境变量或本地存储获取 token（用于测试）
+      const testToken = localStorage.getItem('webhookToken') || 'test-token-for-debugging';
+
       try {
         const response = await fetch('/webhooks/edgeone', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${testToken}`, // 添加 Bearer Token
           },
           body: JSON.stringify(payload)
         });
@@ -398,9 +354,9 @@
     // 事件类型改变时自动填充对应模板
     document.getElementById('eventType').addEventListener('change', function() {
       const eventType = this.value;
-      if (eventType.startsWith('deployment.')) {
+      if (eventType === 'deployment.created') {
         fillDeploymentTemplate();
-      } else if (eventType.startsWith('project.')) {
+      } else if (eventType === 'project.created' || eventType === 'domain.added') {
         fillProjectTemplate();
       }
     });
