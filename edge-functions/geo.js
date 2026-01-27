@@ -12,10 +12,12 @@ export function onRequestPost({request}) {
   });
 }
 
-export function onRequestGet({request}) {
-  console.log('Hello, Edge!', my_kv);
+export async function onRequestGet({request}) {
+  const kv = await your_kv.get('first_node_001');
+  console.log('=====kv=====', kv);
   const geo = request.eo.geo;
   const res = JSON.stringify({
+    kv: kv,
     geo: geo,
   });
 
