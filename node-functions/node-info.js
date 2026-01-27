@@ -16,9 +16,11 @@ export const onRequestGet = async ({ request }) => {
     url: request.url,
   }
 
+  const kv = await your_kv.get('first_node_001');
+  console.log('=====kv=====', kv);
   console.log('=====info=====', info);
 
-  return new Response(JSON.stringify(info), {
+  return new Response(JSON.stringify({ ...info, kv }), {
     status: 200,
     headers: { 'Content-Type': 'application/json; charset=UTF-8' },
   })
