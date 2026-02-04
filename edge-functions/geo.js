@@ -13,13 +13,23 @@ export function onRequestPost({request}) {
 }
 
 export async function onRequestGet({request}) {
-  const kv = await your_kv.get('first_node_001');
-  console.log('=====kv=====', kv);
   const geo = request.eo.geo;
-  const res = JSON.stringify({
-    kv: kv,
-    geo: geo,
-  });
+  
+  // 提取地理位置信息
+  const geoData = {
+    ip: request.headers.get('x-forwarded-for') || request.headers.get('cf-connecting-ip') || '未知',
+    country: geo?.country || '未知',
+    city: geo?.city || '未知',
+    region: geo?.region || '未知',
+    latitude: geo?.latitude || '未知',
+    longitude: geo?.longitude || '未知',
+    timezone: geo?.timezone || '未知',
+    isp: geo?.asOrganization || geo?.isp || '未知',
+    continent: geo?.continent || '未知',
+    countryCode: geo?.countryCode || '',
+  };
+  
+  const res = JSON.stringify(geoData, null, 2);
 
   return new Response(res, {
     headers: {
