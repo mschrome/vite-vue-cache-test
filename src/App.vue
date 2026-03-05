@@ -1,7 +1,21 @@
 <script setup>
+import { computed } from 'vue'
+
+const urlParams = computed(() => {
+  const params = new URLSearchParams(window.location.search)
+  return Object.fromEntries(params.entries())
+})
+
+const paramT = computed(() => urlParams.value.t || '')
 </script>
 
 <template>
+  <div v-if="Object.keys(urlParams).length" class="url-params-box">
+    <strong>🔍 URL 参数：</strong>
+    <span v-for="(val, key) in urlParams" :key="key" class="param-tag">{{ key }}={{ val }}</span>
+    <span v-if="paramT"> | t 的值为：<code>{{ paramT }}</code></span>
+  </div>
+
   <div>
     <a href="https://vitejs.dev" target="_blank">
       <img src="/vite.svg" class="logo" alt="Vite logo" />
@@ -176,3 +190,26 @@
     </div>
   </div>
 </template>
+
+<style scoped>
+.url-params-box {
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+.url-params-box code {
+  background: #e0f2fe;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bold;
+}
+.param-tag {
+  background: #dbeafe;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin: 0 4px;
+}
+</style>
