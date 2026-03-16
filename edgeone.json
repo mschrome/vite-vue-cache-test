@@ -26,5 +26,20 @@
         "svg-captcha"
       ]
     }
+  },
+  "node-functions": {
+    "included_files": [
+      "public/assets/**",
+      "public/assets2/**"
+    ],
+    "external_node_modules": [
+      "@koa/bodyparser",
+      "@koa/router",
+      "koa",
+      "koa-body",
+      "koa-compose",
+      "koa-json",
+      "svg-captcha"
+    ]
   }
 }
