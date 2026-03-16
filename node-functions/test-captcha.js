@@ -159,7 +159,7 @@ export function onRequest(context) {
       },
       config: {
         externalNodeModules: ['svg-captcha'],
-        configuredIn: 'edgeone.json → cloudFunctions.nodejs.externalNodeModules'
+        configuredIn: 'edgeone.json → node-functions.external_node_modules'
       }
     }, null, 2), {
       status: 200,

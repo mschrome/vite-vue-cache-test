@@ -10,21 +10,19 @@
       ]
     }
   ],
-  "cloudFunctions": {
-    "nodejs": {
-      "includeFiles": [
-        "assets/**",
-        "assets2/**"
-      ],
-      "externalNodeModules": [
-        "@koa/bodyparser",
-        "@koa/router",
-        "koa",
-        "koa-body",
-        "koa-compose",
-        "koa-json",
-        "svg-captcha"
-      ]
-    }
+  "node-functions": {
+    "included_files": [
+      "assets/**",
+      "assets2/**"
+    ],
+    "external_node_modules": [
+      "@koa/bodyparser",
+      "@koa/router",
+      "koa",
+      "koa-body",
+      "koa-compose",
+      "koa-json",
+      "svg-captcha"
+    ]
   }
 }
