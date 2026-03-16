@@ -53,33 +53,41 @@ function scanDir(dirPath, maxDepth = 4, currentDepth = 0) {
 
 function tryReadFile(dir, file) {
   const relativePath = `${dir}/${file}`;
+  const publicRelativePath = `public/${dir}/${file}`;
   const cwd = process.cwd();
+  const fnDir = (() => { try { return path.dirname(new URL(import.meta.url).pathname); } catch { return cwd; } })();
   
   // Generate all possible candidate paths
+  // included_files is configured as "public/assets/**" so files may land under public/assets/
   const candidates = [
+    // With public/ prefix (most likely after fixing edgeone.json)
+    publicRelativePath,
+    `/var/user/${publicRelativePath}`,
+    path.resolve(cwd, publicRelativePath),
+    `../../${publicRelativePath}`,
     // Direct relative (if cwd is /var/user, resolves to /var/user/assets/xxx)
     relativePath,
-    // Absolute /var/user paths
     `/var/user/${relativePath}`,
-    // Maybe included_files are placed alongside the function bundle
-    path.join(path.dirname(new URL(import.meta.url).pathname), relativePath),
-    path.join(path.dirname(new URL(import.meta.url).pathname), '..', relativePath),
-    path.join(path.dirname(new URL(import.meta.url).pathname), '..', '..', relativePath),
+    // Based on function file location (import.meta.url)
+    path.join(fnDir, relativePath),
+    path.join(fnDir, publicRelativePath),
+    path.join(fnDir, '..', relativePath),
+    path.join(fnDir, '..', publicRelativePath),
+    path.join(fnDir, '..', '..', relativePath),
+    path.join(fnDir, '..', '..', publicRelativePath),
     // Relative from cwd going up
     `../${relativePath}`,
     `../../${relativePath}`,
     `../../../${relativePath}`,
+    `../${publicRelativePath}`,
+    `../../${publicRelativePath}`,
     // path.resolve from cwd
     path.resolve(cwd, relativePath),
     path.resolve(cwd, '..', relativePath),
     path.resolve(cwd, '..', '..', relativePath),
-    // With public/ prefix
-    `public/${relativePath}`,
-    `/var/user/public/${relativePath}`,
     // /var root variations
     `/var/${relativePath}`,
-    // /tmp just in case
-    `/tmp/${relativePath}`,
+    `/var/${publicRelativePath}`,
   ];
 
   // Deduplicate resolved paths
@@ -156,6 +164,11 @@ export function onRequest(context) {
 
   const result = tryReadFile(fileInfo.dir, fileInfo.file);
 
+  const configInfo = {
+    includeFiles: ['public/assets/**', 'public/assets2/**'],
+    configuredIn: 'edgeone.json → cloudFunctions.nodejs.includeFiles'
+  };
+
   if (result.found) {
     let parsedContent = result.content;
     if (fileName.endsWith('.json')) {
@@ -176,10 +189,7 @@ export function onRequest(context) {
         content: parsedContent,
         size: result.content.length
       },
-      config: {
-        included_files: ['assets/**', 'assets2/**'],
-        configuredIn: 'edgeone.json → node-functions.included_files'
-      },
+      config: configInfo,
       environment: envInfo,
     }, null, 2), {
       status: 200,
@@ -195,10 +205,7 @@ export function onRequest(context) {
     message: `❌ File not found: ${fileName}`,
     triedPaths: result.triedPaths,
     hint: 'Check the directoryTree below to see where files actually exist in runtime',
-    config: {
-      included_files: ['assets/**', 'assets2/**'],
-      configuredIn: 'edgeone.json → node-functions.included_files'
-    },
+    config: configInfo,
     environment: envInfo,
     directoryTree: { '/var/user': dirTree },
   }, null, 2), {
