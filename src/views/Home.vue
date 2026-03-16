@@ -269,7 +269,7 @@ const clearUploadResults = () => {
   
   <!-- Vercel Blob 管理界面 -->
   <div class="blob-manager-container">
-    <h2>🗂️ Vercel Blob 存储管理 2</h2>
+    <h2>🗂️ Vercel Blob 存储管理 Skill</h2>
     
     <!-- 标签页导航 -->
     <div class="tab-navigation">
