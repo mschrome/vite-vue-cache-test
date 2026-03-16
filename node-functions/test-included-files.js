@@ -55,39 +55,27 @@ function tryReadFile(dir, file) {
   const relativePath = `${dir}/${file}`;
   const publicRelativePath = `public/${dir}/${file}`;
   const cwd = process.cwd();
-  const fnDir = (() => { try { return path.dirname(new URL(import.meta.url).pathname); } catch { return cwd; } })();
   
   // Generate all possible candidate paths
-  // included_files is configured as "public/assets/**" so files may land under public/assets/
+  // Runtime puts included_files under /var/user/included_files/<original_path>
+  const includedFilesPublic = `included_files/public/${dir}/${file}`;
+  const includedFilesDirect = `included_files/${dir}/${file}`;
+  
   const candidates = [
-    // With public/ prefix (most likely after fixing edgeone.json)
+    // ★ Most likely: /var/user/included_files/public/assets/xxx
+    path.resolve(cwd, includedFilesPublic),
+    path.resolve(cwd, includedFilesDirect),
+    // Also try relative
+    includedFilesPublic,
+    includedFilesDirect,
+    // With public/ prefix
     publicRelativePath,
     `/var/user/${publicRelativePath}`,
     path.resolve(cwd, publicRelativePath),
-    `../../${publicRelativePath}`,
-    // Direct relative (if cwd is /var/user, resolves to /var/user/assets/xxx)
+    // Direct relative
     relativePath,
     `/var/user/${relativePath}`,
-    // Based on function file location (import.meta.url)
-    path.join(fnDir, relativePath),
-    path.join(fnDir, publicRelativePath),
-    path.join(fnDir, '..', relativePath),
-    path.join(fnDir, '..', publicRelativePath),
-    path.join(fnDir, '..', '..', relativePath),
-    path.join(fnDir, '..', '..', publicRelativePath),
-    // Relative from cwd going up
-    `../${relativePath}`,
-    `../../${relativePath}`,
-    `../../../${relativePath}`,
-    `../${publicRelativePath}`,
-    `../../${publicRelativePath}`,
-    // path.resolve from cwd
     path.resolve(cwd, relativePath),
-    path.resolve(cwd, '..', relativePath),
-    path.resolve(cwd, '..', '..', relativePath),
-    // /var root variations
-    `/var/${relativePath}`,
-    `/var/${publicRelativePath}`,
   ];
 
   // Deduplicate resolved paths
@@ -166,7 +154,9 @@ export function onRequest(context) {
 
   const configInfo = {
     includeFiles: ['public/assets/**', 'public/assets2/**'],
-    configuredIn: 'edgeone.json → cloudFunctions.nodejs.includeFiles'
+    configuredIn: 'edgeone.json → node-functions.included_files (旧格式生效)',
+    runtimeBasePath: '/var/user/included_files/',
+    note: '文件落地在 /var/user/included_files/<included_files配置路径>'
   };
 
   if (result.found) {
