@@ -192,7 +192,7 @@
   <div class="container">
     <div class="header">
       <h1>🚀 EdgeOne Pages Node Functions 测试页面</h1>
-      <p>测试 <code>included_files</code> 和 <code>external_node_modules</code> 配置能力</p>
+      <p>测试 <code>includeFiles</code> 和 <code>externalNodeModules</code> 配置能力</p>
       <p style="margin-top: 10px; color: #999; font-size: 14px;">
         配置文件：<code>edgeone.json</code> | 
         测试文档：<code>TEST_GUIDE.md</code>
@@ -312,20 +312,22 @@
     <div class="config-info">
       <h3>📝 edgeone.json 配置</h3>
       <pre style="background: white; padding: 15px; border-radius: 5px; overflow-x: auto;"><code>{
-  "node-functions": {
-    "included_files": [
-      "assets/**",
-      "assets2/**"
-    ],
-    "external_node_modules": [
-      "@koa/bodyparser",
-      "@koa/router",
-      "koa",
-      "koa-body",
-      "koa-compose",
-      "koa-json",
-      "svg-captcha"
-    ]
+  "cloudFunctions": {
+    "nodejs": {
+      "includeFiles": [
+        "assets/**",
+        "assets2/**"
+      ],
+      "externalNodeModules": [
+        "@koa/bodyparser",
+        "@koa/router",
+        "koa",
+        "koa-body",
+        "koa-compose",
+        "koa-json",
+        "svg-captcha"
+      ]
+    }
   }
 }</code></pre>
     </div>
