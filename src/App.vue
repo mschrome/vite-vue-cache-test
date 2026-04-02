@@ -1,8 +1,10 @@
 <script setup>
 import { computed } from 'vue'
 import { useDarkMode } from './composables/useDarkMode.js'
+import { useTenant } from './composables/useTenant.js'
 
 const { isDark, toggleDark } = useDarkMode()
+const { tenant, loading: tenantLoading } = useTenant()
 
 const urlParams = computed(() => {
   const params = new URLSearchParams(window.location.search)
@@ -19,10 +21,22 @@ const paramT = computed(() => urlParams.value.t || '')
     <span>{{ isDark ? '亮色' : '暗色' }}</span>
   </button>
 
+  <!-- 租户横幅：当识别到租户时在页面顶部展示 -->
+  <div v-if="tenantLoading" class="tenant-banner tenant-banner--loading">
+    Loading...
+  </div>
+  <div v-else-if="tenant" class="tenant-banner" :style="{ borderColor: tenant.themeColor, '--tenant-color': tenant.themeColor }">
+    <img :src="tenant.avatar" :alt="tenant.name" class="tenant-banner-avatar" />
+    <div class="tenant-banner-info">
+      <h2 class="tenant-banner-name" :style="{ color: tenant.themeColor }">{{ tenant.name }}'s Space</h2>
+      <p class="tenant-banner-tagline">{{ tenant.tagline }}</p>
+    </div>
+  </div>
+
   <div v-if="Object.keys(urlParams).length" class="url-params-box">
-    <strong>🔍 URL 参数：</strong>
+    <strong>URL Params:</strong>
     <span v-for="(val, key) in urlParams" :key="key" class="param-tag">{{ key }}={{ val }}</span>
-    <span v-if="paramT"> | t 的值为：<code>{{ paramT }}</code></span>
+    <span v-if="paramT"> | t = <code>{{ paramT }}</code></span>
   </div>
 
   <div>
@@ -33,7 +47,7 @@ const paramT = computed(() => urlParams.value.t || '')
       <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
     </a>
   </div>
-  <HelloWorld msg="File Storage Management System" />
+  <HelloWorld :msg="tenant ? `${tenant.name}'s Dashboard` : 'File Storage Management System'" />
   
   <!-- Vercel Blob 管理界面 -->
   <div class="blob-manager-container">
@@ -201,6 +215,44 @@ const paramT = computed(() => urlParams.value.t || '')
 </template>
 
 <style scoped>
+/* 租户横幅 */
+.tenant-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 2px solid;
+  border-radius: 12px;
+  background: var(--color-bg-card, #fff);
+}
+.tenant-banner--loading {
+  justify-content: center;
+  color: var(--color-text-secondary);
+  border-color: var(--color-border);
+}
+.tenant-banner-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--color-border, #e5e7eb);
+  flex-shrink: 0;
+}
+.tenant-banner-info {
+  min-width: 0;
+}
+.tenant-banner-name {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+.tenant-banner-tagline {
+  margin: 0.2rem 0 0;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
 .url-params-box {
   background: var(--color-bg-params);
   border: 1px solid var(--color-border-params);
