@@ -33,3 +33,9 @@ dist-ssr
 test-*.sh
 
 .codebuddy/
+.agents/
+.claude/
+.cursor/
+.kiro/
+skills-lock.json
+skills/

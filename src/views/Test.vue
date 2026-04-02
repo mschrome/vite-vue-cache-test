@@ -26,18 +26,19 @@ const increment = () => {
   max-width: 720px;
   margin: 2rem auto;
   padding: 2rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 12px;
+  color: var(--color-text);
 }
 .card {
   display: inline-flex;
   align-items: center;
   gap: 12px;
   padding: 12px 16px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border);
   border-radius: 10px;
-  background: #f9fafb;
+  background: var(--color-bg-secondary);
 }
 button {
   padding: 6px 12px;

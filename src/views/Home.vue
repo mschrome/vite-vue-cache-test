@@ -249,9 +249,9 @@ const clearUploadResults = () => {
     <img 
       src="/test.webp" 
       alt="WebP test image" 
-      style="max-width: 360px; width: 100%; height: auto; border-radius: 8px; border: 1px solid #e2e8f0;"
+      style="max-width: 360px; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--color-border);"
     />
-    <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">
+    <p style="color: var(--color-text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
       来自 <code>/public/test.webp</code> · 
       <a href="/test.webp" target="_blank" style="color: #16a34a; text-decoration: underline;">打开原图</a>
     </p>
@@ -262,7 +262,7 @@ const clearUploadResults = () => {
     <a href="/assets-test/hello.txt" target="_blank" style="color: #16a34a; text-decoration: underline;">
       🔁 测试 EdgeOne 重写：打开 /assets-test/hello.txt
     </a>
-    <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.5rem;">
+    <p style="color: var(--color-text-secondary); font-size: 0.9rem; margin-top: 0.5rem;">
       预期应加载自 <code>/assets-new/hello.txt</code>
     </p>
   </div>
@@ -454,7 +454,7 @@ const clearUploadResults = () => {
   margin: 0.5rem 0 1rem;
 }
 .app-nav a {
-  color: #475569;
+  color: var(--color-text-secondary);
   text-decoration: none;
   font-weight: 600;
 }
@@ -467,14 +467,14 @@ const clearUploadResults = () => {
   margin: 2rem auto;
   padding: 2rem;
   max-width: 900px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--color-border);
   border-radius: 12px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  background: var(--gradient-card);
+  box-shadow: 0 4px 6px var(--color-shadow);
 }
 
 .blob-manager-container h2 {
-  color: #1e293b;
+  color: var(--color-text-heading);
   margin-bottom: 1.5rem;
   font-size: 1.5rem;
   text-align: center;
@@ -484,7 +484,7 @@ const clearUploadResults = () => {
 .tab-navigation {
   display: flex;
   margin-bottom: 2rem;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--color-border);
 }
 
 .tab-button {
@@ -494,20 +494,20 @@ const clearUploadResults = () => {
   background: transparent;
   cursor: pointer;
   font-weight: 600;
-  color: #64748b;
+  color: var(--color-text-secondary);
   border-bottom: 3px solid transparent;
   transition: all 0.2s;
 }
 
 .tab-button:hover {
-  background-color: #f1f5f9;
-  color: #475569;
+  background-color: var(--color-bg-card-hover);
+  color: var(--color-text);
 }
 
 .tab-button.active {
   color: #3b82f6;
   border-bottom-color: #3b82f6;
-  background-color: #eff6ff;
+  background-color: var(--color-bg-secondary);
 }
 
 .tab-content {
@@ -529,19 +529,19 @@ const clearUploadResults = () => {
 
 .file-input {
   padding: 0.75rem;
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed var(--color-border-input);
   border-radius: 8px;
-  background-color: #ffffff;
+  background-color: var(--color-bg-input);
   cursor: pointer;
   transition: all 0.2s;
-  color: #475569;
+  color: var(--color-text);
   font-weight: 500;
   min-width: 300px;
 }
 
 .file-input:hover {
-  background-color: #f8fafc;
-  border-color: #94a3b8;
+  background-color: var(--color-bg-card-hover);
+  border-color: var(--color-text-muted);
 }
 
 .file-input:disabled {
@@ -570,7 +570,7 @@ const clearUploadResults = () => {
 }
 
 .upload-btn:disabled {
-  background: #94a3b8;
+  background: var(--color-text-muted);
   cursor: not-allowed;
   transform: none;
 }
@@ -612,7 +612,7 @@ const clearUploadResults = () => {
 }
 
 .refresh-btn:disabled {
-  background: #94a3b8;
+  background: var(--color-text-muted);
   cursor: not-allowed;
 }
 
@@ -637,7 +637,7 @@ const clearUploadResults = () => {
 }
 
 .batch-delete-btn:disabled {
-  background: #94a3b8;
+  background: var(--color-text-muted);
   cursor: not-allowed;
 }
 
@@ -653,14 +653,14 @@ const clearUploadResults = () => {
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  background: white;
-  border: 1px solid #e2e8f0;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   transition: all 0.2s;
 }
 
 .blob-item:hover {
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 4px var(--color-shadow-hover);
   transform: translateY(-1px);
 }
 
@@ -688,7 +688,7 @@ const clearUploadResults = () => {
 .blob-name {
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
-  color: #1e293b;
+  color: var(--color-text-heading);
   word-break: break-all;
 }
 
@@ -696,7 +696,7 @@ const clearUploadResults = () => {
   display: flex;
   gap: 1rem;
   font-size: 0.8rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
   flex-wrap: wrap;
 }
 
@@ -737,7 +737,7 @@ const clearUploadResults = () => {
 }
 
 .delete-btn:disabled {
-  background: #94a3b8;
+  background: var(--color-text-muted);
   cursor: not-allowed;
   transform: none;
 }
@@ -746,13 +746,13 @@ const clearUploadResults = () => {
 .loading {
   text-align: center;
   padding: 2rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 .empty-state {
   text-align: center;
   padding: 2rem;
-  color: #64748b;
+  color: var(--color-text-secondary);
 }
 
 .goto-upload-btn {
@@ -774,15 +774,15 @@ const clearUploadResults = () => {
 }
 
 .result.success {
-  background-color: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #166534;
+  background-color: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  color: var(--color-success-text);
 }
 
 .result.error {
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
+  background-color: var(--color-error-bg);
+  border: 1px solid var(--color-error-border);
+  color: var(--color-error-text);
 }
 
 .result h3 {
@@ -796,12 +796,12 @@ const clearUploadResults = () => {
 }
 
 .blob-link {
-  color: #2563eb;
+  color: var(--color-link);
   text-decoration: underline;
 }
 
 .blob-link:hover {
-  color: #1d4ed8;
+  color: var(--color-link-hover);
 }
 
 .upload-mode-switch {
@@ -810,6 +810,7 @@ const clearUploadResults = () => {
   margin-bottom: 1rem;
   font-size: 1rem;
   font-weight: 500;
+  color: var(--color-text);
 }
 .upload-mode-switch label {
   cursor: pointer;

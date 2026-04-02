@@ -1,5 +1,8 @@
 <script setup>
 import { computed } from 'vue'
+import { useDarkMode } from './composables/useDarkMode.js'
+
+const { isDark, toggleDark } = useDarkMode()
 
 const urlParams = computed(() => {
   const params = new URLSearchParams(window.location.search)
@@ -10,6 +13,12 @@ const paramT = computed(() => urlParams.value.t || '')
 </script>
 
 <template>
+  <!-- 暗黑模式切换按钮 -->
+  <button class="theme-toggle" @click="toggleDark" :title="isDark ? '切换到亮色模式' : '切换到暗色模式'">
+    <span class="icon">{{ isDark ? '☀️' : '🌙' }}</span>
+    <span>{{ isDark ? '亮色' : '暗色' }}</span>
+  </button>
+
   <div v-if="Object.keys(urlParams).length" class="url-params-box">
     <strong>🔍 URL 参数：</strong>
     <span v-for="(val, key) in urlParams" :key="key" class="param-tag">{{ key }}={{ val }}</span>
@@ -193,23 +202,26 @@ const paramT = computed(() => urlParams.value.t || '')
 
 <style scoped>
 .url-params-box {
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background: var(--color-bg-params);
+  border: 1px solid var(--color-border-params);
   border-radius: 8px;
   padding: 8px 16px;
   margin-bottom: 16px;
   font-size: 14px;
+  color: var(--color-text);
 }
 .url-params-box code {
-  background: #e0f2fe;
+  background: var(--color-bg-code);
   padding: 2px 6px;
   border-radius: 4px;
   font-weight: bold;
+  color: var(--color-text);
 }
 .param-tag {
-  background: #dbeafe;
+  background: var(--color-bg-code);
   padding: 2px 8px;
   border-radius: 4px;
   margin: 0 4px;
+  color: var(--color-text);
 }
 </style>

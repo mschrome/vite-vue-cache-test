@@ -17,20 +17,20 @@ const route = useRoute()
   max-width: 720px;
   margin: 5rem auto;
   padding: 2rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--color-bg-card);
   text-align: center;
 }
 
 h1 {
   margin: 0 0 1rem 0;
   font-size: 1.75rem;
-  color: #111827;
+  color: var(--color-text-heading);
 }
 
 p {
-  color: #6b7280;
+  color: var(--color-text-secondary);
 }
 
 .back-home {

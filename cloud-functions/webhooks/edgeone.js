@@ -55,7 +55,7 @@ function handleWebhookEvent(eventType, payload) {
   const handlers = {
     'deployment.created': (data) => {
       // EdgeOne Pages deployment 字段:
-      // appId, projectId, deploymentId, projectName, repoBranch, gitCommit, env, timestamp
+      // appId, projectId, deploymentId, projectName, repoBranch, gitCommit, env, failedReason, timestamp
       console.log(`🚀 Deployment created for project: ${data.projectName || 'N/A'}`);
       console.log(`   - App ID: ${data.appId || 'N/A'}`);
       console.log(`   - Project ID: ${data.projectId || 'N/A'}`);
@@ -63,6 +63,7 @@ function handleWebhookEvent(eventType, payload) {
       console.log(`   - Branch: ${data.repoBranch || 'N/A'}`);
       console.log(`   - Commit: ${data.gitCommit || 'N/A'}`);
       console.log(`   - Environment: ${data.env || 'N/A'}`);
+      console.log(`   - Failed Reason: ${data.failedReason || 'N/A'}`);
       
       return {
         message: 'Deployment created event processed',
@@ -73,6 +74,7 @@ function handleWebhookEvent(eventType, payload) {
         repoBranch: data.repoBranch,
         gitCommit: data.gitCommit,
         env: data.env,
+        failedReason: data.failedReason,
         timestamp: data.timestamp
       };
     },
