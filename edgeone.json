@@ -1,11 +1,41 @@
 {
-  "headers": [
+  "redirects": [
+    {
+      "source": "/home",
+      "destination": "/",
+      "statusCode": 301
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/data/*",
+      "destination": "/assets2/:splat"
+    },
+    {
+      "source": "/legacy/:file",
+      "destination": "/assets/:file"
+    },
     {
       "source": "/*",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/:path*",
       "headers": [
         {
           "key": "Strict-Transport-Security",
           "value": "max-age=31536000; includeSubDomains; preload"
+        }
+      ]
+    },
+    {
+      "source": "/assets/:param",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "max-age=86400"
         }
       ]
     }
